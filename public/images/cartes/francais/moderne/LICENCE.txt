@@ -1,0 +1,13 @@
+Cartes Playora, finition « moderne »
+
+Les figures (rois, dames, valets) proviennent de SVG-cards 4.0.2 :
+  Copyright (C) 2005 David Bellot
+  Copyright (C) 2016, 2017 Huub de Beer
+  https://github.com/htdebeer/SVG-cards
+
+Elles sont distribuées sous la licence GNU Lesser General Public License,
+version 2.1 ou ultérieure : https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+Modifications apportées par Playora : figures extraites et recadrées, index
+français (R, D, V), nouveau fond, nouveaux coins, chiffres, symboles et dos.
+Les fichiers SVG modifiés de ce dossier restent sous la même licence LGPL.

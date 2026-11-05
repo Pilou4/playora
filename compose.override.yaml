@@ -1,18 +1,35 @@
+# Développement uniquement.
+# Ports ouverts sur 127.0.0.1 seulement (jamais sur le réseau),
+# et différents de ton autre projet pour pouvoir lancer les deux en même temps.
 
 services:
 ###> doctrine/doctrine-bundle ###
   database:
     ports:
-      - "5432"
+      - "127.0.0.1:3308:3306"   # MySQL : DATABASE_URL=...@127.0.0.1:3308/... dans .env.local
 ###< doctrine/doctrine-bundle ###
 
 ###> symfony/mailer ###
+  # Mailpit : attrape les e-mails envoyés par l'application (rien ne part vraiment)
   mailer:
     image: axllent/mailpit
     ports:
-      - "1025"
-      - "8025"
+      - "127.0.0.1:1026:1025"   # serveur SMTP : MAILER_DSN=smtp://127.0.0.1:1026 dans .env.local
+      - "127.0.0.1:8026:8025"   # interface web : http://127.0.0.1:8026
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 ###< symfony/mailer ###
+
+  # phpMyAdmin : interface web pour la base de données
+  # http://127.0.0.1:8082 (identifiants dans .env.docker.local)
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+    ports:
+      - "127.0.0.1:8082:80"
+    depends_on:
+      database:
+        condition: service_healthy

@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Playora : belote, tarot, coinche et rami en ligne{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Jouez à la belote, au tarot, à la coinche ou au rami en ligne, entre amis ou avec d'autres joueurs, sur ordinateur, tablette et téléphone.">
+{% endblock %}
+
+{% block og_title %}Playora : belote, tarot, coinche et rami en ligne{% endblock %}
+{% block og_description %}Jouez à la belote, au tarot, à la coinche ou au rami en ligne, entre amis ou avec d'autres joueurs.{% endblock %}
+
+{% block main_id %}accueil{% endblock %}
+
+{% block body %}
+    {% set cards = 'images/cartes/francais/moderne/' %}
+
+    {% set games = [
+        {name: 'Belote', info: '4 joueurs · 2 équipes · 32 cartes', url: '/jeux/belote', theme: 'orange', cards: ['carreau/valet', 'coeur/roi']},
+        {name: 'Tarot', info: '3 à 5 joueurs · 78 cartes', url: null, theme: 'teal', cards: ['pique/as', 'pique/dame']},
+        {name: 'Coinche', info: '4 joueurs · enchères', url: null, theme: 'yellow', cards: ['carreau/10', 'coeur/7']},
+        {name: 'Rami', info: '2 à 6 joueurs · combinaisons', url: null, theme: 'navy', cards: ['trefle/8', 'trefle/dame']},
+    ] %}
+
+    {% set steps = [
+        {title: 'Créez votre compte', text: 'Une adresse e-mail et un pseudo suffisent.'},
+        {title: 'Ouvrez une table', text: 'Un lien pour vos amis, ou une place chez d’autres joueurs.'},
+        {title: 'Jouez partout', text: 'La partie suit sur ordinateur, tablette et téléphone.'},
+    ] %}
+
+    <main id="accueil" class="home">
+        <section class="hero" aria-labelledby="accueil-titre">
+            <div class="hero__panel">
+                <div class="hero__text">
+                    <h1 id="accueil-titre" class="hero__title">Vos jeux de cartes, en vrai et partout.</h1>
+                    <p class="hero__lead">Belote, tarot, coinche et rami. Jouez avec vos amis ou avec d’autres joueurs, en quelques secondes.</p>
+                    <div class="hero__actions">
+                        <a class="button button--dark button--large" href="/jeux/belote">Jouer maintenant</a>
+                        <a class="button button--light button--large" href="/salons/nouveau">Inviter des amis</a>
+                    </div>
+                </div>
+
+                <div class="hero__visual" aria-hidden="true">
+                    <div class="hero__cards">
+                        <img class="hero__card hero__card--back" src="{{ asset(cards ~ 'dos.svg') }}" width="250" height="350" alt="" fetchpriority="high">
+                        <img class="hero__card hero__card--left" src="{{ asset(cards ~ 'coeur/roi.svg') }}" width="250" height="350" alt="" fetchpriority="high">
+                        <img class="hero__card hero__card--middle" src="{{ asset(cards ~ 'carreau/valet.svg') }}" width="250" height="350" alt="" fetchpriority="high">
+                        <img class="hero__card hero__card--right" src="{{ asset(cards ~ 'pique/as.svg') }}" width="250" height="350" alt="" fetchpriority="high">
+                    </div>
+                    <img class="hero__die" src="{{ asset('images/accueil/de.svg') }}" width="120" height="120" alt="">
+                    <img class="hero__pawn" src="{{ asset('images/accueil/pion.svg') }}" width="80" height="104" alt="">
+                </div>
+            </div>
+        </section>
+
+        <section class="games" aria-labelledby="jeux-titre">
+            <h2 id="jeux-titre" class="section-title">Les jeux</h2>
+            <ul class="games__list">
+                {% for game in games %}
+                    <li class="game game--{{ game.theme }}">
+                        <article class="game__inner">
+                            <h3 class="game__name">{{ game.name }}</h3>
+                            <p class="game__info">{{ game.info }}</p>
+                            {% if game.url %}
+                                <a class="button button--white" href="{{ game.url }}">Jouer<span class="visually-hidden"> : {{ game.name }}</span></a>
+                            {% else %}
+                                <p class="game__soon">Bientôt</p>
+                            {% endif %}
+                            <div class="game__cards" aria-hidden="true">
+                                {% for card in game.cards %}
+                                    <img class="game__card" src="{{ asset(cards ~ card ~ '.svg') }}" width="250" height="350" alt="" loading="lazy">
+                                {% endfor %}
+                            </div>
+                        </article>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="steps" aria-labelledby="etapes-titre">
+            <h2 id="etapes-titre" class="section-title">Comment ça marche</h2>
+            <ol class="steps__list">
+                {% for step in steps %}
+                    <li class="step">
+                        <span class="step__number" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
+                        <h3 class="step__title">{{ step.title }}</h3>
+                        <p class="step__text">{{ step.text }}</p>
+                    </li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        <section class="app-banner" aria-labelledby="application-titre">
+            <div class="app-banner__panel">
+                <h2 id="application-titre" class="app-banner__title">L’application iOS et Android arrive bientôt.</h2>
+                <a class="button button--brand button--large" href="/application">Être prévenu</a>
+            </div>
+        </section>
+    </main>
+{% endblock %}

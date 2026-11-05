@@ -1,0 +1,30 @@
+# Jetons d'accès JWT (paquet lexik/jwt-authentication-bundle).
+# Les clés sont dans config/jwt/ (ignorées par Git) ; la phrase secrète dans .env.local.
+lexik_jwt_authentication:
+    secret_key: '%env(resolve:JWT_SECRET_KEY)%'
+    public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
+    pass_phrase: '%env(JWT_PASSPHRASE)%'
+
+    # Durée de vie courte : un compte bloqué ou déconnecté perd l'accès en 15 minutes au plus
+    token_ttl: 900
+
+    # Le jeton est lu dans l'en-tête (application mobile) ou dans le cookie (site web)
+    token_extractors:
+        authorization_header:
+            enabled: true
+            prefix: Bearer
+            name: Authorization
+        cookie:
+            enabled: true
+            name: BEARER
+
+    # Le site reçoit le jeton dans un cookie que le JavaScript ne peut pas lire (vol de jeton impossible)…
+    set_cookies:
+        BEARER:
+            samesite: strict
+            path: /
+            secure: true
+            httpOnly: true
+
+    # …et l'application mobile le reçoit dans le corps de la réponse
+    remove_token_from_body_when_cookies_used: false

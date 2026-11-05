@@ -35,6 +35,34 @@
             "src/Migrations/.gitignore"
         ]
     },
+    "gesdinet/jwt-refresh-token-bundle": {
+        "version": "v3.1.0"
+    },
+    "lexik/jwt-authentication-bundle": {
+        "version": "3.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "2.5",
+            "ref": "e9481b233a11ef7e15fe055a2b21fd3ac1aa2bb7"
+        },
+        "files": [
+            "config/packages/lexik_jwt_authentication.yaml"
+        ]
+    },
+    "nelmio/api-doc-bundle": {
+        "version": "5.13",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "3.0",
+            "ref": "c8e0c38e1a280ab9e37587a8fa32b251d5bc1c94"
+        },
+        "files": [
+            "config/packages/nelmio_api_doc.yaml",
+            "config/routes/nelmio_api_doc.yaml"
+        ]
+    },
     "phpunit/phpunit": {
         "version": "13.4",
         "recipe": {
@@ -319,6 +347,21 @@
         "files": [
             "config/packages/messenger.yaml"
         ]
+    },
+    "symfonycasts/reset-password-bundle": {
+        "version": "1.26",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "97c1627c0384534997ae1047b93be517ca16de43"
+        },
+        "files": [
+            "config/packages/reset_password.yaml"
+        ]
+    },
+    "symfonycasts/verify-email-bundle": {
+        "version": "v1.18.0"
     },
     "twig/extra-bundle": {
         "version": "v3.29.0"

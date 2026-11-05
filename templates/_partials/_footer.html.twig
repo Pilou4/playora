@@ -1,0 +1,17 @@
+<footer class="site-footer">
+    <div class="site-footer__inner">
+        <a class="site-footer__brand" href="{{ path('app_home') }}">
+            <img class="site-footer__logo" src="{{ asset('images/logo/playora-icone.svg') }}" width="200" height="200" alt="Playora, retour à l'accueil" loading="lazy">
+        </a>
+
+        <nav class="site-footer__nav" aria-label="Liens du pied de page">
+            <ul class="site-footer__list">
+                <li><a class="site-footer__link" href="/mentions-legales">Mentions légales</a></li>
+                <li><a class="site-footer__link" href="/confidentialite">Confidentialité</a></li>
+                <li><a class="site-footer__link" href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+
+        <p class="site-footer__copyright">&copy; {{ 'now'|date('Y') }} Playora</p>
+    </div>
+</footer>

@@ -1,0 +1,25 @@
+<header class="site-header">
+    <div class="site-header__inner">
+        <a class="site-header__brand" href="{{ path('app_home') }}"{% if app.request.attributes.get('_route') == 'app_home' %} aria-current="page"{% endif %}>
+            <picture>
+                <source media="(max-width: 29.99em)" srcset="{{ asset('images/logo/playora-icone.svg') }}" width="200" height="200">
+                <img class="site-header__logo" src="{{ asset('images/logo/playora-logo.svg') }}" width="659" height="160" alt="Playora, retour à l'accueil">
+            </picture>
+        </a>
+
+        {# Adresses des pages à venir : les liens passeront à path() quand les routes existeront #}
+        <nav class="site-nav" aria-label="Menu principal">
+            <ul class="site-nav__list">
+                <li><a class="site-nav__link" href="/jeux">Jeux</a></li>
+                <li><a class="site-nav__link" href="/salons">Salons</a></li>
+                <li><a class="site-nav__link" href="/tournois">Tournois</a></li>
+                <li><a class="site-nav__link" href="/classements">Classements</a></li>
+            </ul>
+        </nav>
+
+        <div class="site-header__account">
+            <a class="button button--ghost" href="/connexion">Se connecter</a>
+            <a class="button button--dark" href="/inscription">Créer un compte</a>
+        </div>
+    </div>
+</header>
