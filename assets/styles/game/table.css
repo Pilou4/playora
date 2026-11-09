@@ -1,0 +1,13 @@
+/* ==========================================================================
+   Commun à toutes les tables de jeu (belote, et les prochains jeux) :
+   pendant une partie, la page tient dans l'écran (pas de défilement) et le pied de page est masqué.
+   Il suffit que le <main> de la partie porte la classe game-table.
+   ========================================================================== */
+
+body:has(.game-table) {
+    overflow: hidden;
+}
+
+body:has(.game-table) .site-footer {
+    display: none;
+}

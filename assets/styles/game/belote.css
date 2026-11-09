@@ -1,0 +1,1091 @@
+/* ==========================================================================
+   Table de belote (ambiance « Lagon ») : un plateau posé dans la page, sous l'en-tête du site.
+   Feutre, tapis central surpiqué, joueurs en médaillons (anneau = minuteur), pupitre en bas
+   d'où sort la main, tableau des scores et dernier pli en haut.
+   Tailles en cqw (largeur du plateau) : tout grandit ou rétrécit avec lui.
+   Trois tapis : belote--lagon (par défaut), belote--vert, belote--nuit.
+   ========================================================================== */
+
+@property --ring {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 100%;
+}
+
+.belote {
+    --felt: radial-gradient(90% 90% at 50% 40%, #2aa3a0, #17807f 55%, #0f5f60);
+    --rope: #0f6463;
+    --stitch: rgba(191, 240, 236, 0.45);
+    --bezel: linear-gradient(145deg, #bff0ec, #3fb3ad);
+    --bezel-in: #0f6463;
+    --timer: #ff5a3d;
+    --timer-off: #bff0ec;
+    --plate: linear-gradient(#8e2333, #6a1724);
+    --plate-ink: #fff5e6;
+    --plate-edge: #d9a3a3;
+    --console: linear-gradient(#7c1d2b, #5b1420);
+    --console-rim: linear-gradient(90deg, transparent, #c95b6a, transparent);
+    --panel: #fffaf0;
+    --panel-alt: #e6f3f1;
+    --panel-edge: #d6e9e6;
+    --panel-ink: #13505a;
+    --chip: #a52a3c;
+    --glow: #ffd23f;
+    --cta: linear-gradient(#ff7a45, #e8452d);
+    --on-felt: #fff;
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    display: grid;
+    place-items: center;
+    height: calc(100svh - var(--offset, 90px));
+    padding: 0.75rem 1.25rem 1rem;
+    user-select: none;
+}
+
+.belote--vert {
+    --felt: radial-gradient(90% 90% at 50% 40%, #2a8a5c, #186b45 55%, #0e4a2f);
+    --rope: #0e4a2f;
+    --stitch: rgba(201, 230, 205, 0.4);
+    --bezel: linear-gradient(145deg, #cdeccf, #4fa36e);
+    --bezel-in: #0e4a2f;
+    --timer-off: #cdeccf;
+    --panel-alt: #e7f2e9;
+    --panel-edge: #d5e8d8;
+    --panel-ink: #15462e;
+}
+
+.belote--nuit {
+    --felt: radial-gradient(90% 90% at 50% 40%, #2c4170, #1d2c52 55%, #131d38);
+    --rope: #131d38;
+    --stitch: rgba(180, 196, 240, 0.4);
+    --bezel: linear-gradient(145deg, #d8e0f8, #6f86c9);
+    --bezel-in: #1b2a4a;
+    --timer-off: #d8e0f8;
+    --panel-alt: #eef1fa;
+    --panel-edge: #dfe5f3;
+    --panel-ink: #1b2a4a;
+}
+
+/* ---------- Plateau ---------- */
+
+.belote__frame {
+    --card-w: 10.6cqw;
+    --trick-w: 8.4cqw;
+    --back-w: 5.8cqw;
+
+    position: relative;
+    width: min(100%, calc((100svh - var(--offset, 90px) - 32px) * 1.6));
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 1.4rem;
+    container-type: inline-size;
+    box-shadow: 0 1.9rem 3.75rem -1.25rem rgba(27, 42, 74, 0.45), 0 0 0 1px rgba(27, 42, 74, 0.08);
+}
+
+.belote__toolbar {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: min(5cqw, 52px);
+    padding: 0 1.6cqw;
+    background: var(--panel);
+    color: #1b2a4a;
+}
+
+.belote__title {
+    margin: 0;
+    font: 800 clamp(0.95rem, 1.45cqw, 1.2rem) var(--font-display);
+}
+
+.belote__subtitle {
+    font: 600 clamp(0.75rem, 1.05cqw, 0.9rem) var(--font-body);
+    opacity: 0.7;
+}
+
+.belote__tools {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.carpets {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.carpets__choice {
+    width: 25.6px;
+    height: 25.6px;
+    padding: 0;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(27, 42, 74, 0.2);
+    cursor: pointer;
+}
+
+.carpets__choice--lagon { background: #1f8f8d; }
+.carpets__choice--vert { background: #1d7a50; }
+.carpets__choice--nuit { background: #243766; }
+
+.carpets__choice--active {
+    box-shadow: 0 0 0 2px #1b2a4a;
+}
+
+.belote__quit {
+    padding: 0.4rem 0.9rem;
+    border-radius: 99px;
+    background: #efe7d6;
+    color: #1b2a4a;
+    font: 700 0.85rem var(--font-body);
+    text-decoration: none;
+}
+
+.belote__felt {
+    position: absolute;
+    inset: min(5cqw, 3.25rem) 0 0;
+    background: var(--felt);
+    color: var(--on-felt);
+}
+
+.belote__felt::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("/images/tapis/feutre-vert.svg");
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+}
+
+.belote__felt::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(60% 55% at 50% 45%, rgba(255, 255, 255, 0.1), transparent 70%),
+        radial-gradient(130% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.35));
+    pointer-events: none;
+}
+
+/* Tapis central : bordure surpiquée et les quatre couleurs dans les coins */
+.belote__mat {
+    position: absolute;
+    inset: 19% 28% 37%;
+    z-index: 1;
+    border: 0.3cqw solid var(--rope);
+    border-radius: 1.4cqw;
+    outline: 0.18cqw dashed var(--stitch);
+    outline-offset: -0.9cqw;
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0.3cqw 1cqw rgba(0, 0, 0, 0.25), 0 0.15cqw 0 rgba(255, 255, 255, 0.12);
+}
+
+.belote__mat-suit {
+    position: absolute;
+    width: 2.2cqw;
+    height: 2.2cqw;
+    opacity: 0.35;
+    filter: grayscale(1) brightness(0.4);
+}
+
+.belote__mat-suit--1 { left: 1.2cqw; top: 1cqw; }
+.belote__mat-suit--2 { right: 1.2cqw; top: 1cqw; }
+.belote__mat-suit--3 { left: 1.2cqw; bottom: 1cqw; }
+.belote__mat-suit--4 { right: 1.2cqw; bottom: 1cqw; }
+
+/* ---------- Cartes ---------- */
+
+.card {
+    position: relative;
+    display: block;
+    width: var(--w, var(--card-w));
+    aspect-ratio: 5 / 7;
+    overflow: hidden;
+    border-radius: 8% / 5.7%;
+    background-color: #fff;
+}
+
+.card__face {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Papier toilé, très léger */
+.card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("/images/tapis/papier-toile.svg") 0 0 / 9rem;
+    mix-blend-mode: multiply;
+    opacity: 0.25;
+    pointer-events: none;
+}
+
+.card--back {
+    background-color: transparent;
+}
+
+.card--back::after {
+    display: none;
+}
+
+.card--shadow {
+    filter: drop-shadow(0 0.1cqw 0.1cqw rgba(0, 0, 0, 0.35)) drop-shadow(0 0.6cqw 0.8cqw rgba(0, 0, 0, 0.3));
+}
+
+/* Cartes en vol (animations) : dans un calque au-dessus de la table, positionnées par le JS */
+.belote__flights {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+}
+
+.flying {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 50% 50%;
+    will-change: transform;
+}
+
+.flying--probe {
+    visibility: hidden;
+}
+
+/* ---------- Joueurs ---------- */
+
+/* Pas de z-index ici : mon médaillon doit pouvoir passer au-dessus du pupitre */
+.belote__players {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.player {
+    position: absolute;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.player--top { left: 50%; top: 1.2%; transform: translateX(-50%); }
+.player--left { left: 6.5%; top: 31%; }
+.player--right { right: 6.5%; top: 31%; }
+.player--bottom { left: calc(50% - 37cqw); bottom: 0.8cqw; z-index: 10; }
+
+/* Médaillon : l'anneau devient le minuteur quand c'est au joueur */
+.player__ring {
+    position: relative;
+    z-index: 2;
+    width: 8.6cqw;
+    height: 8.6cqw;
+    padding: 0.65cqw;
+    border-radius: 50%;
+    background: var(--bezel);
+    box-shadow: 0 0.5cqw 1.2cqw rgba(0, 0, 0, 0.35), inset 0 0.15cqw 0 rgba(255, 255, 255, 0.5);
+}
+
+.player--bottom .player__ring {
+    width: 9.6cqw;
+    height: 9.6cqw;
+}
+
+.player--turn .player__ring {
+    background: conic-gradient(var(--timer) 0 var(--ring), var(--timer-off) var(--ring) 100%);
+}
+
+.player__avatar,
+.player__initial {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    border: 0.35cqw solid var(--bezel-in);
+    border-radius: 50%;
+    background: #fff;
+}
+
+.player__initial {
+    color: var(--bezel-in);
+    font: 800 3cqw var(--font-display);
+}
+
+.player__name {
+    position: relative;
+    z-index: 3;
+    min-width: 11cqw;
+    margin: -0.7cqw 0 0;
+    padding: 0.35cqw 1.6cqw;
+    border: 0.12cqw solid var(--plate-edge);
+    border-radius: 0.7cqw;
+    background: var(--plate);
+    color: var(--plate-ink);
+    font: 800 1.35cqw var(--font-display);
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 0.35cqw 0.8cqw rgba(0, 0, 0, 0.35), inset 0 0.12cqw 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Mon pseudo ne s'affiche pas : c'est moi */
+.player--bottom .player__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
+/* Pastille d'atout sur le preneur */
+.player__contract {
+    position: absolute;
+    left: -1.2cqw;
+    top: 0.4cqw;
+    z-index: 4;
+    display: none;
+    place-items: center;
+    width: 3cqw;
+    height: 3cqw;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0.3cqw 0.7cqw rgba(0, 0, 0, 0.35);
+}
+
+.player__contract--visible {
+    display: grid;
+}
+
+.player__contract img {
+    width: 1.7cqw;
+    height: 1.7cqw;
+}
+
+/* Éventail de dos derrière le médaillon */
+.player__fan {
+    --w: var(--back-w);
+
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    width: 0;
+    height: 0;
+}
+
+.player--top .player__fan { top: 28%; transform: rotate(180deg); }
+.player--left .player__fan { left: 62%; top: 42%; transform: rotate(90deg); }
+.player--right .player__fan { left: 38%; top: 42%; transform: rotate(-90deg); }
+.player--bottom .player__fan { display: none; }
+
+.player__fan .card {
+    position: absolute;
+    left: calc(var(--w) / -2);
+    top: calc(var(--w) * -1.2);
+    transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 12deg));
+    transform-origin: 50% 115%;
+    filter: drop-shadow(0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.3));
+}
+
+/* Bulles (« Je passe », « Belote ! ») */
+.player__bubble {
+    position: absolute;
+    z-index: 6;
+    margin: 0;
+    padding: 0.7cqw 1.2cqw;
+    border-radius: 1.2cqw;
+    background: #fffaf0;
+    color: #1b2a4a;
+    font: 800 1.35cqw var(--font-display);
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 0.5cqw 1.2cqw rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.2s ease, transform 0.25s var(--ease-out);
+}
+
+.player__bubble--visible {
+    opacity: 1;
+    transform: none;
+}
+
+.player__bubble::after {
+    content: "";
+    position: absolute;
+    width: 1.2cqw;
+    height: 1.2cqw;
+    background: inherit;
+    transform: rotate(45deg);
+}
+
+.player--top .player__bubble { left: calc(100% + 0.8cqw); top: 2cqw; }
+.player--top .player__bubble::after { left: -0.5cqw; top: 40%; }
+.player--left .player__bubble { left: calc(100% - 1cqw); top: -2.6cqw; }
+.player--left .player__bubble::after { left: 1.4cqw; bottom: -0.5cqw; }
+.player--right .player__bubble { right: calc(100% - 1cqw); top: -2.6cqw; }
+.player--right .player__bubble::after { right: 1.4cqw; bottom: -0.5cqw; }
+.player--bottom .player__bubble { left: calc(100% + 0.6cqw); top: 0; }
+.player--bottom .player__bubble::after { left: -0.5cqw; top: 40%; }
+
+/* Plis gagnés pendant la donne : un petit tas avec le nombre */
+.player__pile {
+    position: absolute;
+    width: 3.4cqw;
+    height: 4.4cqw;
+    margin: 0;
+    border-radius: 0.45cqw;
+    background: linear-gradient(135deg, #ff8a3d, #ff3d7f);
+    box-shadow: 0.5cqw -0.3cqw 0 -0.05cqw rgba(255, 255, 255, 0.85), 0.5cqw -0.3cqw 0 0.1cqw rgba(0, 0, 0, 0.15), 0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.3);
+    border: 0.15cqw solid #fff;
+}
+
+.player__pile--empty {
+    background: none;
+    border: 0.2cqw solid rgba(0, 0, 0, 0.3);
+    box-shadow: none;
+}
+
+.player__pile-count {
+    position: absolute;
+    left: 50%;
+    top: 115%;
+    transform: translateX(-50%);
+    font: 800 1.4cqw var(--font-display);
+}
+
+.player--top .player__pile { right: calc(100% + 2cqw); top: 1cqw; }
+.player--left .player__pile { left: 2.5cqw; top: calc(100% + 6cqw); }
+.player--right .player__pile { right: 2.5cqw; top: calc(100% + 6cqw); }
+.player--bottom .player__pile { left: calc(100% + 1cqw); top: -3cqw; }
+
+/* ---------- Pli en cours ---------- */
+
+.belote__trick {
+    --w: var(--trick-w);
+
+    position: absolute;
+    inset: 19% 28% 37%;
+    z-index: 3;
+}
+
+.trick__card {
+    position: absolute;
+}
+
+.trick__card--top { left: calc(50% - var(--w) / 2); top: 4%; transform: rotate(4deg); }
+.trick__card--left { left: 16%; top: calc(50% - var(--w) * 0.7); transform: rotate(-11deg); }
+.trick__card--right { right: 16%; top: calc(50% - var(--w) * 0.7); transform: rotate(10deg); }
+.trick__card--bottom { left: calc(50% - var(--w) / 2); bottom: 4%; transform: rotate(-3deg); }
+
+/* ---------- Centre : enchères et résultat de la donne ---------- */
+
+.belote__center {
+    position: absolute;
+    inset: 19% 28% 37%;
+    z-index: 4;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+}
+
+.bidding,
+.result {
+    grid-area: 1 / 1;
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.25s ease, transform 0.3s var(--ease-out);
+}
+
+.bidding--visible,
+.result--visible {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+
+.bidding {
+    display: flex;
+    align-items: center;
+    gap: 2.4cqw;
+}
+
+.bidding__card .card {
+    --w: 10.4cqw;
+
+    transform: rotate(-4deg);
+    filter: drop-shadow(0 0.6cqw 1cqw rgba(0, 0, 0, 0.35));
+}
+
+.bidding__title {
+    margin: 0;
+    font: 800 2.5cqw var(--font-display);
+    text-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.35);
+}
+
+.bidding__text {
+    margin: 0.3cqw 0 1.4cqw;
+    font: 600 1.15cqw var(--font-body);
+    opacity: 0.85;
+}
+
+.bidding__title:empty,
+.bidding__text:empty {
+    display: none;
+}
+
+.bidding__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1cqw;
+}
+
+.bidding__actions:empty {
+    display: none;
+}
+
+.bidding__button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6cqw;
+    height: 4.4cqw;
+    padding: 0 2.2cqw;
+    border: 0.15cqw solid var(--plate-edge);
+    border-radius: 99px;
+    background: var(--plate);
+    color: var(--plate-ink);
+    font: 800 1.6cqw var(--font-display);
+    box-shadow: 0 0.5cqw 1cqw rgba(0, 0, 0, 0.3), inset 0 0.15cqw 0 rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.bidding__button:hover,
+.bidding__button:focus-visible {
+    transform: translateY(-0.15cqw);
+}
+
+.bidding__button--take {
+    border: 0;
+    background: var(--cta);
+    color: #fff;
+}
+
+.bidding__button img {
+    width: 1.8cqw;
+    height: 1.8cqw;
+    padding: 0.2cqw;
+    border-radius: 50%;
+    background: #fff;
+}
+
+/* Second tour : une tuile par couleur */
+.bidding--second .bidding__card {
+    display: none;
+}
+
+.bidding--second .bidding__panel {
+    text-align: center;
+}
+
+.bidding--second .bidding__actions {
+    justify-content: center;
+}
+
+.bidding__button--suit {
+    width: 6cqw;
+    height: 6cqw;
+    padding: 0;
+    justify-content: center;
+    border: 0;
+    border-radius: 1.2cqw;
+    background: #fffaf0;
+}
+
+.bidding__button--suit img {
+    width: 3.2cqw;
+    height: 3.2cqw;
+    padding: 0;
+    background: none;
+}
+
+.bidding__button--pass {
+    flex-basis: 100%;
+    max-width: max-content;
+    margin: 0 auto;
+}
+
+.result {
+    text-align: center;
+    text-shadow: 0 0.2cqw 0.5cqw rgba(0, 0, 0, 0.35);
+}
+
+.result p {
+    margin: 0;
+}
+
+.result__title {
+    font: 800 3.2cqw var(--font-display);
+}
+
+.result .result__line {
+    margin-top: 0.6cqw;
+    font: 700 1.8cqw var(--font-display);
+}
+
+.result__points {
+    font: 800 2.4cqw var(--font-display);
+}
+
+.result__value {
+    color: var(--glow);
+    font-size: 4.6cqw;
+}
+
+.result__taker,
+.result__bonus,
+.result__them {
+    font: 600 1.4cqw var(--font-body);
+    opacity: 0.9;
+}
+
+/* ---------- Main (en éventail, elle sort de derrière le pupitre) ---------- */
+
+.hand {
+    position: absolute;
+    left: 50%;
+    bottom: 4.8cqw;
+    z-index: 7;
+    width: 0;
+    height: calc(var(--card-w) * 1.4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.hand__card {
+    --fan: 7.5deg;
+
+    position: absolute;
+    left: calc(var(--card-w) / -2);
+    bottom: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * var(--fan)));
+    transform-origin: 50% 320%;
+    transition: transform 0.25s var(--ease-out), filter 0.25s ease, translate 0.25s var(--ease-out);
+    filter: drop-shadow(0 0.1cqw 0.1cqw rgba(0, 0, 0, 0.35)) drop-shadow(0 0.6cqw 0.8cqw rgba(0, 0, 0, 0.3));
+}
+
+/* À mon tour : cartes jouables levées et bordées d'or, les autres à peine assombries */
+.hand--active .hand__card {
+    filter: drop-shadow(0 0.1cqw 0.1cqw rgba(0, 0, 0, 0.35)) brightness(0.88);
+    cursor: not-allowed;
+}
+
+.hand--active .hand__card--playable {
+    translate: 0 -1.4cqw;
+    filter: drop-shadow(0 0 0.25cqw var(--glow)) drop-shadow(0 0 0.1cqw var(--glow)) drop-shadow(0 1cqw 1.2cqw rgba(0, 0, 0, 0.35));
+    cursor: pointer;
+}
+
+.hand--active .hand__card--playable:hover,
+.hand--active .hand__card--playable:focus-visible {
+    translate: 0 -2.6cqw;
+    outline: none;
+}
+
+/* ---------- Pupitre et discussion ---------- */
+
+.belote__console {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    z-index: 8;
+    width: 72cqw;
+    height: 6.4cqw;
+    transform: translateX(-50%);
+    background: var(--plate);
+    clip-path: polygon(3.2% 0, 96.8% 0, 100% 100%, 0 100%);
+    box-shadow: inset 0 0.25cqw 0 rgba(255, 255, 255, 0.22);
+}
+
+.belote__console::before {
+    content: "";
+    position: absolute;
+    inset: 0.45cqw 0.9cqw 0;
+    background: var(--console);
+    clip-path: polygon(2.6% 0, 97.4% 0, 100% 100%, 0 100%);
+}
+
+.belote__console::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 0.3cqw;
+    background: var(--console-rim);
+}
+
+.chat {
+    position: absolute;
+    left: 50%;
+    bottom: 0.9cqw;
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    gap: 0.5cqw;
+    margin: 0;
+    transform: translateX(-50%);
+}
+
+.chat__button {
+    display: flex;
+    align-items: center;
+    height: 3.4cqw;
+    padding: 0 0.8cqw;
+    border: 0;
+    border-radius: 0.8cqw;
+    background: var(--chip);
+    color: #fff;
+    font: 800 1.15cqw var(--font-display);
+}
+
+.chat__button img {
+    width: 2.4cqw;
+    height: 2.4cqw;
+}
+
+.chat__button:disabled,
+.chat__input:disabled {
+    opacity: 0.75;
+}
+
+.chat__input {
+    width: 16cqw;
+    height: 3.4cqw;
+    padding: 0 0.9cqw;
+    border: 0;
+    border-radius: 0.8cqw;
+    background: #fffaf0;
+    color: #1b2a4a;
+    font: 500 1.05cqw var(--font-body);
+}
+
+/* ---------- Dernier pli et score ---------- */
+
+.last-trick,
+.score {
+    position: absolute;
+    top: 1.2cqw;
+    z-index: 9;
+    overflow: hidden;
+    border: 0.15cqw solid var(--panel-edge);
+    border-radius: 1cqw;
+    background: var(--panel);
+    color: var(--panel-ink);
+    box-shadow: 0 0.7cqw 1.6cqw rgba(0, 0, 0, 0.35);
+}
+
+.last-trick {
+    left: 1.4cqw;
+    width: 17cqw;
+}
+
+.last-trick__toggle,
+.score__head {
+    display: flex;
+    align-items: center;
+    gap: 1cqw;
+    width: 100%;
+    padding: 0.55cqw 1.2cqw;
+    border: 0;
+    background: var(--plate);
+    color: var(--plate-ink);
+    font: 800 1.3cqw var(--font-display);
+    cursor: pointer;
+}
+
+.last-trick__toggle:disabled {
+    cursor: default;
+    opacity: 0.8;
+}
+
+.last-trick__chevron,
+.score__chevron {
+    width: 1cqw;
+    height: 1cqw;
+    border-right: 0.25cqw solid currentColor;
+    border-bottom: 0.25cqw solid currentColor;
+    transform: translateY(-0.2cqw) rotate(45deg);
+    transition: transform 0.2s ease;
+}
+
+.last-trick--open .last-trick__chevron,
+.score--open .score__chevron {
+    transform: translateY(0.2cqw) rotate(-135deg);
+}
+
+.last-trick__cards {
+    display: none;
+    justify-content: center;
+    gap: 0.4cqw;
+    padding: 0.9cqw 0.6cqw;
+}
+
+.last-trick--open .last-trick__cards {
+    display: flex;
+}
+
+.last-trick__cards .card {
+    --w: 3.6cqw;
+
+    box-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.25);
+}
+
+.score {
+    right: 1.4cqw;
+    width: 21cqw;
+}
+
+.score__head {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.4cqw;
+    text-align: center;
+}
+
+.score__deals {
+    display: none;
+    width: 100%;
+    border-collapse: collapse;
+    font: 700 1.2cqw var(--font-body);
+}
+
+.score--open .score__deals {
+    display: table;
+}
+
+.score__deals th {
+    width: 2.6cqw;
+    padding-left: 0.9cqw;
+    font-weight: 700;
+    text-align: left;
+    opacity: 0.6;
+}
+
+.score__deals td {
+    padding: 0.35cqw 0;
+    text-align: center;
+}
+
+.score__deals tr:nth-child(odd) {
+    background: var(--panel-alt);
+}
+
+.score__totals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0;
+    padding: 0.5cqw 0;
+    border-top: 0.15cqw solid var(--panel-edge);
+    font: 700 1.05cqw var(--font-body);
+    text-align: center;
+}
+
+.score__totals b {
+    margin-right: 0.2cqw;
+    font: 800 1.9cqw var(--font-display);
+}
+
+/* ---------- Messages et fin de partie ---------- */
+
+.belote__toast {
+    position: absolute;
+    left: 50%;
+    top: 14%;
+    z-index: 30;
+    margin: 0;
+    padding: 0.7cqw 1.4cqw;
+    border-radius: 99px;
+    background: rgba(12, 20, 30, 0.82);
+    color: #fff;
+    font: 700 1.2cqw var(--font-body);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate(-50%, -0.5cqw);
+    transition: opacity 0.2s ease, transform 0.25s var(--ease-out);
+    pointer-events: none;
+}
+
+.belote__toast--visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.belote__end {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 30, 32, 0.55);
+    text-align: center;
+}
+
+.belote__end--visible {
+    display: flex;
+}
+
+.belote__end-title {
+    margin: 0;
+    font: 800 3.6cqw var(--font-display);
+    text-shadow: 0 0.2cqw 0.5cqw rgba(0, 0, 0, 0.35);
+}
+
+/* Le score sur un ruban */
+.belote__end-score {
+    margin: 1.2cqw 0 2cqw;
+    padding: 0.8cqw 5cqw;
+    background: linear-gradient(#ffd96a, #e9a92a);
+    color: #5a3a06;
+    font: 800 3.4cqw var(--font-display);
+    clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%);
+}
+
+.belote__end-link {
+    display: inline-flex;
+    align-items: center;
+    height: 5cqw;
+    padding: 0 3.4cqw;
+    border-radius: 99px;
+    background: var(--cta);
+    color: #fff;
+    font: 800 1.8cqw var(--font-display);
+    text-decoration: none;
+    box-shadow: 0 0.5cqw 1cqw rgba(0, 0, 0, 0.3);
+}
+
+/* ---------- Téléphone : le plateau prend tout l'écran ---------- */
+
+@media (max-width: 640px) {
+    .belote {
+        padding: 0;
+    }
+
+    .belote__frame {
+        --card-w: 78px;
+        --trick-w: 62px;
+        --back-w: 30px;
+
+        width: 100%;
+        height: 100%;
+        aspect-ratio: auto;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .belote__toolbar {
+        height: 44px;
+        padding: 0 12px;
+    }
+
+    .belote__subtitle {
+        display: none;
+    }
+
+    .belote__felt {
+        inset: 44px 0 0;
+    }
+
+    .belote__mat,
+    .belote__trick,
+    .belote__center {
+        inset: 24% 4% 36%;
+    }
+
+    .belote__mat-suit {
+        display: none;
+    }
+
+    .trick__card--left { left: 12%; top: 22%; }
+    .trick__card--right { right: 12%; top: 22%; }
+
+    .player__ring { width: 60px; height: 60px; padding: 5px; }
+    .player--bottom .player__ring { width: 60px; height: 60px; }
+    .player__avatar, .player__initial { border-width: 2px; }
+    .player__initial { font-size: 22px; }
+    .player__name { min-width: 76px; margin-top: -6px; padding: 3px 8px; border-radius: 6px; font-size: 12px; }
+    .player--top { top: 9%; }
+    .player--left { left: 1.5%; top: 50%; }
+    .player--right { right: 1.5%; top: 50%; }
+    .player--bottom { left: 8px; bottom: 60px; }
+    .player__contract { left: -6px; width: 24px; height: 24px; }
+    .player__contract img { width: 14px; height: 14px; }
+    .player__bubble { padding: 6px 9px; border-radius: 10px; font-size: 12px; }
+    .player__bubble::after { width: 9px; height: 9px; }
+    .player--top .player__bubble { top: 6px; }
+    .player--left .player__bubble,
+    .player--right .player__bubble { top: -34px; }
+    .player__pile { display: none; }
+
+    .belote__center { inset: 22% 22% 38%; }
+    .bidding { flex-direction: column; gap: 8px; text-align: center; }
+    .bidding__actions { flex-direction: column; align-items: center; }
+    .bidding__button--pass { flex-basis: auto; }
+    .bidding__card .card { --w: 64px; }
+    .bidding__title { font-size: 18px; }
+    .bidding__text { margin: 2px 0 10px; font-size: 11px; }
+    .bidding__actions { justify-content: center; gap: 8px; }
+    .bidding__button { height: 38px; padding: 0 16px; font-size: 14px; }
+    .bidding__button img { width: 18px; height: 18px; }
+    .bidding__button--suit { width: 44px; height: 44px; padding: 0; border-radius: 10px; }
+    .bidding__button--suit img { width: 24px; height: 24px; }
+    .result__title { font-size: 22px; }
+    .result__line { font-size: 14px; }
+    .result__points { font-size: 16px; }
+    .result__value { font-size: 30px; }
+    .result__bonus, .result__them { font-size: 12px; }
+
+    .hand { left: 56%; bottom: 46px; }
+    .hand__card { --fan: 6.5deg; }
+    .hand--active .hand__card--playable { translate: 0 -12px; }
+
+    .belote__console { width: 100%; height: 52px; clip-path: none; }
+    .belote__console::before { inset: 4px 0 0; clip-path: none; }
+    .chat { bottom: 8px; gap: 4px; }
+    .chat__button { height: 34px; padding: 0 8px; border-radius: 9px; font-size: 12px; }
+    .chat__button img { width: 24px; height: 24px; }
+    .chat__input { display: none; }
+
+    .last-trick { left: 8px; top: 8px; width: 120px; border-radius: 10px; }
+    .last-trick__toggle, .score__head { padding: 6px 10px; gap: 8px; font-size: 12px; }
+    .last-trick--open { width: 180px; }
+    .last-trick__cards .card { --w: 36px; }
+    .score { right: 8px; top: 8px; width: 150px; border-radius: 10px; }
+    .score__head { grid-template-columns: 1fr 1fr 12px; }
+    .score__deals, .score--open .score__deals { display: none; }
+    .score__totals { padding: 4px 0; font-size: 11px; }
+    .score__totals b { font-size: 17px; }
+    .last-trick__chevron, .score__chevron { width: 8px; height: 8px; border-width: 2px; }
+
+    .belote__toast { top: 18%; padding: 6px 12px; font-size: 12px; }
+    .belote__end-title { font-size: 26px; }
+    .belote__end-score { font-size: 24px; margin: 10px 0 16px; }
+    .belote__end-link { height: 44px; padding: 0 22px; font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hand__card,
+    .player__bubble,
+    .belote__toast,
+    .bidding,
+    .result {
+        transition: none;
+    }
+}

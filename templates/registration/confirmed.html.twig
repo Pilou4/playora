@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Adresse confirmée | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Votre adresse e-mail est confirmée : vous pouvez vous connecter à Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block main_id %}adresse-confirmee{% endblock %}
+
+{% block body %}
+    <main id="adresse-confirmee" class="auth">
+        <section class="auth__panel auth__panel--message auth__panel--confirmed" aria-labelledby="confirmation-titre">
+            <img class="auth__illustration" src="{{ asset('images/illustrations/confirme.svg') }}" width="240" height="200" alt="">
+            <h1 id="confirmation-titre" class="auth__title">Bienvenue à la table{% if pseudo %}, {{ pseudo }}{% endif %} !</h1>
+            <p class="auth__lead">Votre adresse est confirmée. Vous pouvez maintenant vous connecter et lancer votre première partie.</p>
+            <a class="button button--dark button--large" href="{{ path('app_login') }}">Se connecter</a>
+        </section>
+
+        {{ include('_partials/_auth_visual.html.twig', {tagline: 'C’est parti !', tagline_text: 'Votre compte est prêt, il ne manque plus que vous à la table.'}) }}
+    </main>
+{% endblock %}

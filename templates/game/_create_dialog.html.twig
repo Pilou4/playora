@@ -1,0 +1,38 @@
+{# Fenêtre « Créer un salon » (élément dialog natif : clavier, Échap et focus gérés par le navigateur).
+   Envoyée en JSON à l'API par assets/js/games/Lobby.js #}
+<dialog class="dialog" id="creer-un-salon" aria-labelledby="creer-un-salon-titre">
+    <form class="room-form" novalidate>
+        <h2 id="creer-un-salon-titre" class="dialog__title">Créer une partie de {{ game.label|lower }}</h2>
+        <p class="dialog__lead">Les équipes seront tirées au sort quand les {{ game.playerCount }} places seront prises.</p>
+
+        <div class="room-form__fixed">
+            <p class="room-form__tile"><span class="room-form__tile-label">Joueurs</span><strong class="room-form__tile-value">{{ game.playerCount }}</strong><span class="room-form__tile-hint">2 équipes de 2</span></p>
+            <p class="room-form__tile"><span class="room-form__tile-label">Manches</span><strong class="room-form__tile-value">1</strong><span class="room-form__tile-hint">Fixé pour l’instant</span></p>
+        </div>
+
+        <fieldset class="segmented">
+            <legend class="segmented__legend">Partie en</legend>
+            <div class="segmented__options">
+                {% for points in game.targetPointsChoices %}
+                    <input class="segmented__input" type="radio" id="points-{{ points }}" name="targetPoints" value="{{ points }}"{% if points == 1001 %} checked{% endif %}>
+                    <label class="segmented__label" for="points-{{ points }}">{{ points }} points</label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <div class="switch">
+            <div class="switch__text">
+                <label class="switch__label" for="annonces">Annonces</label>
+                <p class="switch__help" id="annonces-aide">Tierce, cinquante, cent, carré</p>
+            </div>
+            <input class="switch__input" type="checkbox" id="annonces" name="announcements" aria-describedby="annonces-aide">
+        </div>
+
+        <p class="dialog__note">Temps pour jouer une carte : 20 secondes.</p>
+
+        <div class="dialog__actions">
+            <button class="form__link-button dialog__close" type="button">Annuler</button>
+            <button class="button button--brand button--large dialog__submit" type="submit">Créer la partie</button>
+        </div>
+    </form>
+</dialog>

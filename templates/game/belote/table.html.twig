@@ -1,0 +1,127 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Partie de belote | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Votre partie de belote en cours sur Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'belote']) }}{% endblock %}
+
+{% block main_id %}partie{% endblock %}
+
+{% block body %}
+    {% set cards = asset('images/cartes/francais/moderne/') %}
+    <main id="partie" class="game-table belote belote--lagon"
+          data-view="{{ view|json_encode }}"
+          data-api-url="{{ path('api_belote_game', {id: game.id}) }}"
+          data-hub-url="{{ mercure(topic) }}"
+          data-csrf="{{ csrf_token('submit') }}"
+          data-cards-url="{{ cards }}"
+          data-suits-url="{{ asset('images/tapis/') }}">
+        <h1 class="visually-hidden">Partie de belote en {{ room.targetPoints }} points</h1>
+
+        {# Le plateau : il reste dans la page, sous l'en-tête du site #}
+        <div class="belote__frame">
+            <header class="belote__toolbar">
+                <p class="belote__title">Belote <span class="belote__subtitle">· partie en {{ room.targetPoints }}</span></p>
+                <div class="belote__tools">
+                    <div class="carpets" role="group" aria-label="Tapis">
+                        <button class="carpets__choice carpets__choice--lagon" type="button" data-carpet="lagon" aria-pressed="true"><span class="visually-hidden">Tapis lagon</span></button>
+                        <button class="carpets__choice carpets__choice--vert" type="button" data-carpet="vert" aria-pressed="false"><span class="visually-hidden">Tapis vert</span></button>
+                        <button class="carpets__choice carpets__choice--nuit" type="button" data-carpet="nuit" aria-pressed="false"><span class="visually-hidden">Tapis nuit</span></button>
+                    </div>
+                    <a class="belote__quit" href="{{ path('app_game_lobby', {game: 'belote'}) }}">Quitter</a>
+                </div>
+            </header>
+
+            <div class="belote__felt">
+                <div class="belote__mat" aria-hidden="true">
+                    {% for suit in ['trefle', 'carreau', 'coeur', 'pique'] %}
+                        <img class="belote__mat-suit belote__mat-suit--{{ loop.index }}" src="{{ asset('images/tapis/couleur-' ~ suit ~ '.svg') }}" width="26" height="26" alt="">
+                    {% endfor %}
+                </div>
+
+                <section class="belote__players" aria-label="Joueurs"></section>
+
+                <section class="belote__trick" aria-label="Pli en cours"></section>
+
+                <section class="belote__center" aria-live="polite">
+                    <div class="bidding">
+                        <div class="bidding__card"></div>
+                        <div class="bidding__panel">
+                            <p class="bidding__title"></p>
+                            <p class="bidding__text"></p>
+                            <div class="bidding__actions"></div>
+                        </div>
+                    </div>
+                    <div class="result">
+                        <p class="result__title"></p>
+                        <p class="result__taker"></p>
+                        <p class="result__line">Votre équipe marque</p>
+                        <p class="result__points"><span class="result__value"></span> pts</p>
+                        <p class="result__bonus"></p>
+                        <p class="result__them"></p>
+                    </div>
+                </section>
+
+                <section class="last-trick" aria-label="Dernier pli">
+                    <button class="last-trick__toggle" type="button" aria-expanded="false" disabled>
+                        <span class="last-trick__chevron" aria-hidden="true"></span>Dernier pli
+                    </button>
+                    <div class="last-trick__cards"></div>
+                </section>
+
+                <section class="score score--open" aria-label="Score">
+                    <button class="score__head" type="button" aria-expanded="true">
+                        <span>Nous</span><span>Eux</span><span class="score__chevron" aria-hidden="true"></span>
+                    </button>
+                    <table class="score__deals">
+                        <caption class="visually-hidden">Points marqués à chaque donne</caption>
+                        <tbody class="score__rows"></tbody>
+                    </table>
+                    <p class="score__totals">
+                        <span><b class="score__us">0</b>/{{ room.targetPoints }}</span>
+                        <span><b class="score__them">0</b>/{{ room.targetPoints }}</span>
+                    </p>
+                </section>
+
+                <ol class="hand" aria-label="Votre main"></ol>
+
+                {# Le pupitre du bas : la main en sort, mon avatar est posé à gauche, la discussion au centre #}
+                <div class="belote__console" aria-hidden="true"></div>
+
+                <form class="chat" aria-label="Discussion">
+                    <button class="chat__button chat__button--emoji" type="button" disabled>
+                        <img src="{{ asset('images/emojis/sourire.svg') }}" width="26" height="26" alt="Émojis">
+                    </button>
+                    <button class="chat__button" type="button" disabled>Bonjour</button>
+                    <label class="visually-hidden" for="chat-message">Message</label>
+                    <input class="chat__input" id="chat-message" type="text" placeholder="Discussion bientôt disponible" disabled>
+                </form>
+
+                <div class="belote__flights" aria-hidden="true"></div>
+
+                <p class="belote__toast" role="status"></p>
+
+                <section class="belote__end" aria-labelledby="fin-titre">
+                    <h2 id="fin-titre" class="belote__end-title"></h2>
+                    <p class="belote__end-score"></p>
+                    <a class="belote__end-link" href="{{ path('app_game_lobby', {game: 'belote'}) }}">Retour aux salons</a>
+                </section>
+            </div>
+        </div>
+
+        <template id="modele-joueur">
+            <div class="player">
+                <div class="player__fan"></div>
+                <div class="player__ring"></div>
+                <span class="player__contract"></span>
+                <p class="player__name"></p>
+                <p class="player__bubble"></p>
+                <p class="player__pile"><span class="player__pile-count"></span><span class="visually-hidden"> plis</span></p>
+            </div>
+        </template>
+    </main>
+{% endblock %}

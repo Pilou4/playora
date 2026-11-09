@@ -1,0 +1,16 @@
+{% set cards = 'images/cartes/francais/moderne/' %}
+<div class="auth__visual">
+    <p class="auth__tagline">{{ tagline|default('Votre place est à la table.') }}</p>
+    <p class="auth__tagline-text">{{ tagline_text|default('Retrouvez vos amis, vos parties et vos scores sur tous vos écrans.') }}</p>
+
+    <div class="auth__decor" aria-hidden="true">
+        <div class="auth__cards">
+            <img class="auth__card auth__card--back" src="{{ asset(cards ~ 'dos.svg') }}" width="250" height="350" alt="">
+            <img class="auth__card auth__card--left" src="{{ asset(cards ~ 'coeur/roi.svg') }}" width="250" height="350" alt="">
+            <img class="auth__card auth__card--middle" src="{{ asset(cards ~ 'carreau/valet.svg') }}" width="250" height="350" alt="">
+            <img class="auth__card auth__card--right" src="{{ asset(cards ~ 'pique/as.svg') }}" width="250" height="350" alt="">
+        </div>
+        <img class="auth__die" src="{{ asset('images/accueil/de.svg') }}" width="120" height="120" alt="">
+        <img class="auth__pawn" src="{{ asset('images/accueil/pion.svg') }}" width="80" height="104" alt="">
+    </div>
+</div>

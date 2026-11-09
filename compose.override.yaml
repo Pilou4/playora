@@ -33,3 +33,17 @@ services:
     depends_on:
       database:
         condition: service_healthy
+
+###> symfony/mercure-bundle ###
+  mercure:
+    ports:
+      - "127.0.0.1:3001:80"     # MERCURE_URL=http://127.0.0.1:3001/.well-known/mercure dans .env.local
+    environment:
+      # En local : HTTP simple (127.0.0.1 est considéré comme sûr par les navigateurs)
+      SERVER_NAME: ':80'
+      # playground : page de test sur http://127.0.0.1:3001/.well-known/mercure/ui/
+      MERCURE_EXTRA_DIRECTIVES: |
+        anonymous
+        playground
+        cors_origins https://127.0.0.1:8000 http://127.0.0.1:8000
+###< symfony/mercure-bundle ###

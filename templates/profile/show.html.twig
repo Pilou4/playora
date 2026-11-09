@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'form/fields.html.twig' %}
+
+{% block title %}Mon profil | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Votre profil Playora : avatar et pseudo.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block og_title %}Mon profil | Playora{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'avatar']) }}{% endblock %}
+
+{% block main_id %}mon-profil{% endblock %}
+
+{% block body %}
+    <main id="mon-profil" class="profile">
+        <div class="profile__showcase">
+            <div class="profile__visual">
+                <div class="profile__frame">
+                    {% if avatar_code %}
+                        <img class="profile__image" src="{{ path('app_avatar_image', {code: avatar_code, v: avatar_version()}) }}" width="240" height="300" alt="Votre avatar">
+                    {% endif %}
+                </div>
+                <a class="profile__change" href="{{ path('app_profile_avatar') }}">
+                    <img class="profile__change-icon" src="{{ asset('images/icones/avatar.svg') }}" width="18" height="18" alt="">
+                    Changer d’avatar
+                </a>
+            </div>
+
+            <section class="profile__content" aria-labelledby="profil-titre">
+                <p class="profile__kicker">Mon profil</p>
+                <h1 id="profil-titre" class="profile__title">Bonjour {{ app.user.pseudo }}</h1>
+                <p class="profile__lead">Votre pseudo et votre avatar sont ce que les autres joueurs voient à la table.</p>
+
+                {% for notice in app.flashes('profile_notice') %}
+                    <p class="profile__notice" role="status">{{ notice }}</p>
+                {% endfor %}
+
+                {{ form_start(form, {attr: {class: 'form form--validate profile__form'}}) }}
+                    {{ form_row(form.pseudo) }}
+                    {{ form_errors(form) }}
+                    <button class="button button--brand button--large profile__submit" type="submit">Enregistrer</button>
+                {{ form_end(form) }}
+            </section>
+        </div>
+    </main>
+{% endblock %}

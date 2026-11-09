@@ -1,0 +1,91 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ game.label }} en ligne : salons en attente | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Rejoignez une table de {{ game.label|lower }} ou créez votre salon : {{ game.playerCount }} joueurs, 2 équipes tirées au sort, en ligne et gratuit.">
+{% endblock %}
+
+{% block og_title %}{{ game.label }} en ligne : salons en attente | Playora{% endblock %}
+{% block og_description %}Rejoignez une table de {{ game.label|lower }} ou créez votre salon.{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'games']) }}{% endblock %}
+
+{% block main_id %}salons{% endblock %}
+
+{% block body %}
+    {% set cards = 'images/cartes/francais/moderne/' %}
+    <main id="salons" class="lobby"
+          data-state="{{ state|json_encode }}"
+          data-api-url="{{ path('api_game_rooms', {game: game.value}) }}"
+          data-presence-url="{{ path('api_game_presence', {game: game.value}) }}"
+          data-hub-url="{{ mercure(topic) }}"
+          data-csrf="{{ csrf_token('submit') }}"
+          data-login-url="{{ path('app_login') }}"
+          data-connected="{{ app.user ? '1' : '0' }}">
+        <section class="lobby__band" aria-labelledby="salons-titre">
+            <nav class="lobby__breadcrumb" aria-label="Fil d’Ariane">
+                <ol class="lobby__breadcrumb-list">
+                    <li class="lobby__breadcrumb-item"><a class="lobby__breadcrumb-link" href="{{ path('app_home') }}">Accueil</a></li>
+                    <li class="lobby__breadcrumb-item" aria-current="page">{{ game.label }}</li>
+                </ol>
+            </nav>
+            <h1 id="salons-titre" class="lobby__title">{{ game.label }}</h1>
+            <p class="lobby__lead">{{ game.playerCount }} joueurs, 2 équipes tirées au sort au début de la partie</p>
+            <div class="lobby__cards" aria-hidden="true">
+                <img class="lobby__card lobby__card--left" src="{{ asset(cards ~ 'carreau/valet.svg') }}" width="250" height="350" alt="">
+                <img class="lobby__card lobby__card--middle" src="{{ asset(cards ~ 'coeur/roi.svg') }}" width="250" height="350" alt="">
+                <img class="lobby__card lobby__card--right" src="{{ asset(cards ~ 'pique/as.svg') }}" width="250" height="350" alt="">
+            </div>
+        </section>
+
+        <section class="lobby__main" aria-label="Salons en attente et règles du jeu">
+            <div class="lobby__bar">
+                <div class="tabs" role="tablist" aria-label="Afficher">
+                    <button class="tabs__tab tabs__tab--active" type="button" role="tab" aria-selected="true" aria-controls="salons-liste" data-filter="all">Tous <span class="tabs__count"></span></button>
+                    {% for points in game.targetPointsChoices %}
+                        <button class="tabs__tab" type="button" role="tab" aria-selected="false" aria-controls="salons-liste" data-filter="{{ points }}">{{ points }} pts <span class="tabs__count"></span></button>
+                    {% endfor %}
+                    <button class="tabs__tab" type="button" role="tab" aria-selected="false" aria-controls="salons-liste" data-filter="sans-annonces">Sans annonces <span class="tabs__count"></span></button>
+                    <span class="tabs__separator" aria-hidden="true"></span>
+                    <button class="tabs__tab" type="button" role="tab" aria-selected="false" aria-controls="regles" data-filter="regles">Règles du jeu</button>
+                </div>
+                <button class="button button--brand lobby__create" type="button">+ Créer une partie</button>
+            </div>
+
+            <div id="salons-liste" class="lobby__panel" role="tabpanel" aria-label="Salons en attente">
+                <noscript><p class="lobby__empty">Activez JavaScript pour rejoindre une table.</p></noscript>
+                <ul class="lobby__list"></ul>
+                <p class="lobby__empty lobby__empty--rooms" hidden>Aucune partie en attente pour le moment. Créez la vôtre : les joueurs la verront tout de suite.</p>
+            </div>
+
+            {{ include('game/_rules_belote.html.twig') }}
+        </section>
+
+        {# Modèle d'un salon : copié par assets/js/games/Lobby.js pour chaque salon reçu de l'API #}
+        <template id="modele-salon">
+            <li class="room">
+                <div class="room__info">
+                    <ul class="room__rules">
+                        <li class="chip room__points"></li>
+                        <li class="chip room__rounds"></li>
+                        <li class="chip room__announcements"></li>
+                    </ul>
+                </div>
+                <ol class="room__seats"></ol>
+            </li>
+        </template>
+
+        <template id="modele-place">
+            <li class="seat">
+                <span class="seat__avatar avatar" aria-hidden="true"></span>
+                <span class="seat__name"></span>
+                <button class="seat__button" type="button"></button>
+            </li>
+        </template>
+
+        {{ include('game/_create_dialog.html.twig') }}
+
+        <div class="toast" role="status" aria-live="polite"></div>
+    </main>
+{% endblock %}

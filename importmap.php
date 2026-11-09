@@ -23,7 +23,14 @@
  * }>
  */
 return [
+    'belote' => [
+        'path' => './assets/belote.js',
+        'entrypoint' => true,
+    ],
     'app' => ['path' => './assets/app.js', 'entrypoint' => true],
+    // Pages de jeu (salons, partie) : chargé seulement sur ces pages
+    'games' => ['path' => './assets/games.js', 'entrypoint' => true],
+    'avatar' => ['path' => './assets/avatar.js', 'entrypoint' => true],
     '@hotwired/stimulus' => ['version' => '3.2.2'],
     '@symfony/stimulus-bundle' => ['path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js'],
     '@hotwired/turbo' => ['version' => '8.0.23'],

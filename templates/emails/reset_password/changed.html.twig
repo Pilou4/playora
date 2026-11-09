@@ -1,0 +1,13 @@
+{% extends 'emails/_layout.html.twig' %}
+
+{% block subject %}Votre mot de passe a été modifié{% endblock %}
+
+{% block content %}
+    <h1 style="margin:0 0 12px;font-size:26px;line-height:1.2;">Bonjour {{ pseudo }},</h1>
+    <p style="margin:0 0 16px;">Le mot de passe de votre compte Playora vient d’être modifié. Vos autres connexions ont été fermées.</p>
+    <p style="margin:0 0 24px;">C’est bien vous ? Il n’y a rien à faire.</p>
+    <p style="margin:0 0 24px;">Ce n’est pas vous ? Reprenez la main tout de suite en choisissant un nouveau mot de passe :</p>
+    <p style="margin:0 0 24px;">
+        <a href="{{ forgotUrl }}" style="display:inline-block;padding:14px 28px;border-radius:999px;background-color:#be185d;color:#ffffff;font-weight:bold;text-decoration:none;">Sécuriser mon compte</a>
+    </p>
+{% endblock %}

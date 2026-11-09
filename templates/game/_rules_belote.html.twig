@@ -1,0 +1,82 @@
+{# Règles de la belote pour débutants, affichées dans l'onglet «&nbsp;Règles du jeu&nbsp;» de la page des salons #}
+{% set cards = 'images/cartes/francais/moderne/' %}
+{% set trump = [['valet', 'Valet', 20], ['9', '9', 14], ['as', 'As', 11], ['10', '10', 10], ['roi', 'Roi', 4], ['dame', 'Dame', 3], ['8', '8', 0], ['7', '7', 0]] %}
+{% set plain = [['as', 'As', 11], ['10', '10', 10], ['roi', 'Roi', 4], ['dame', 'Dame', 3], ['valet', 'Valet', 2], ['9', '9', 0], ['8', '8', 0], ['7', '7', 0]] %}
+<section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
+    <h2 id="regles-titre" class="visually-hidden">Règles de la belote</h2>
+    <div class="rules__content">
+
+    <div class="rules__intro">
+        <article class="rules__summary">
+            <h3 class="rules__heading rules__heading--large">La belote en 30 secondes</h3>
+            <p class="rules__summary-text">4 joueurs, 2 équipes de 2 (votre partenaire est en face). Chacun reçoit 8 cartes. À chaque tour, chacun pose une carte : la plus forte remporte le <strong>pli</strong>. Une couleur est l’<strong>atout</strong> : elle bat toutes les autres. Les points des cartes gagnées s’additionnent ; la première équipe à atteindre le score de la partie gagne.</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading">Ce qu’on doit jouer</h3>
+            <ol class="rules__steps">
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">1</span>
+                    <div><p class="rules__step-title">Suivre la couleur</p><p class="rules__text">Si on demande du pique, vous jouez du pique si vous en avez.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">2</span>
+                    <div><p class="rules__step-title">Sinon, couper</p><p class="rules__text">Pas de pique ? Jouez un atout… sauf si votre partenaire gagne déjà le pli : là, jouez ce que vous voulez.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">3</span>
+                    <div><p class="rules__step-title">À l’atout, monter</p><p class="rules__text">Quand on joue de l’atout, mettez un atout plus fort si vous en avez un.</p></div>
+                </li>
+            </ol>
+        </article>
+    </div>
+
+    {% for row in [{suit: 'coeur', title: '♥ La couleur d’atout (exemple : cœur)', list: trump}, {suit: 'pique', title: '♠ Les autres couleurs', list: plain}] %}
+        <article class="rules__box rules__values">
+            <h3 class="rules__heading rules__heading--medium">{{ row.title }} <span class="rules__hint">de la plus forte à la plus faible · points en dessous</span></h3>
+            <ol class="rules__cards" tabindex="0" aria-label="{{ row.title }}">
+                {% for card in row.list %}
+                    <li class="rules__card">
+                        <img class="rules__card-img" src="{{ asset(cards ~ row.suit ~ '/' ~ card[0] ~ '.svg') }}" width="250" height="350" alt="" loading="lazy">
+                        <p class="rules__card-points">{{ card[2] }}<span class="visually-hidden"> points,</span></p>
+                        <p class="rules__card-name">{{ card[1] }}</p>
+                    </li>
+                {% endfor %}
+            </ol>
+        </article>
+    {% endfor %}
+
+    <div class="rules__grid">
+        <article class="rules__box">
+            <h3 class="rules__heading rules__heading--small">Choisir l’atout</h3>
+            <p class="rules__text">Une carte est retournée. Chacun à son tour la prend (sa couleur devient l’atout) ou passe. Au 2e tour, on peut choisir une autre couleur.</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading rules__heading--small">Compter les points</h3>
+            <p class="rules__text">Une donne vaut 162 points, dont 10 pour le dernier pli. L’équipe qui a choisi l’atout doit faire plus que l’autre, sinon tous les points vont aux adversaires.</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading rules__heading--small">Belote, rebelote</h3>
+            <p class="rules__text">Le Roi et la Dame d’atout dans la même main : 20 points de plus. On les annonce en les jouant.</p>
+        </article>
+    </div>
+
+    <details class="rules__box rules__more">
+        <summary class="rules__more-summary">
+            <span class="rules__heading rules__heading--small rules__more-title">Les annonces <span class="rules__hint">seulement dans les parties «&nbsp;avec annonces&nbsp;»</span></span>
+            <img class="rules__more-icon" src="{{ asset('images/icones/chevron-bas.svg') }}" width="20" height="20" alt="">
+        </summary>
+        <div class="rules__more-content">
+            <p class="rules__text">Au premier pli, avant de jouer sa carte, on peut annoncer une combinaison qu’on a en main. Seule l’équipe qui a la plus forte annonce marque ses points, en plus des points des plis.</p>
+            <dl class="rules__announces">
+                <div class="rules__announce"><dt class="rules__announce-name">Tierce</dt><dd class="rules__announce-detail">3 cartes qui se suivent dans la même couleur (ex. : 7, 8, 9 de cœur)</dd><dd class="rules__announce-points">20</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Cinquante</dt><dd class="rules__announce-detail">4 cartes qui se suivent dans la même couleur</dd><dd class="rules__announce-points">50</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Cent</dt><dd class="rules__announce-detail">5 cartes qui se suivent dans la même couleur</dd><dd class="rules__announce-points">100</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Carré de Valets</dt><dd class="rules__announce-detail">les 4 Valets</dd><dd class="rules__announce-points">200</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Carré de 9</dt><dd class="rules__announce-detail">les 4 neuf</dd><dd class="rules__announce-points">150</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Autre carré</dt><dd class="rules__announce-detail">les 4 As, les 4 dix, les 4 Rois ou les 4 Dames (les 7 et les 8 ne comptent pas)</dd><dd class="rules__announce-points">100</dd></div>
+            </dl>
+            <p class="rules__note">Ordre des cartes pour les suites : 7, 8, 9, 10, Valet, Dame, Roi, As. À égalité, la suite la plus haute gagne. La belote-rebelote compte toujours, avec ou sans annonces.</p>
+        </div>
+    </details>
+    </div>
+</section>

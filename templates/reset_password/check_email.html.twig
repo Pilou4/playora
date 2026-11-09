@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Vérifiez votre boîte mail | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Un lien pour choisir un nouveau mot de passe vous a été envoyé.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block main_id %}lien-envoye{% endblock %}
+
+{% block body %}
+    <main id="lien-envoye" class="auth">
+        <section class="auth__panel auth__panel--message" aria-labelledby="lien-envoye-titre">
+            <img class="auth__illustration" src="{{ asset('images/illustrations/enveloppe.svg') }}" width="240" height="200" alt="">
+            <h1 id="lien-envoye-titre" class="auth__title">Vérifiez votre boîte mail</h1>
+            <p class="auth__lead">
+                Si un compte existe pour
+                {% if email %}<strong class="auth__email">{{ email }}</strong>{% else %}cette adresse{% endif %},
+                un e-mail vient de partir avec un lien pour choisir un nouveau mot de passe.
+            </p>
+            <p class="auth__note">Le lien est valable 30 minutes et ne sert qu’une fois. Pensez à regarder dans les courriers indésirables.</p>
+            <p class="auth__note">Rien reçu ? <a class="form__link form__link--strong" href="{{ path('app_forgot_password_request') }}">Refaire une demande</a></p>
+        </section>
+
+        {{ include('_partials/_auth_visual.html.twig', {tagline: 'Pas de panique.', tagline_text: 'Un nouveau mot de passe et vous retrouvez votre place à la table.'}) }}
+    </main>
+{% endblock %}

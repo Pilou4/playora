@@ -1,5 +1,5 @@
 # Services Docker de Playora.
-# Les mots de passe ne sont jamais écrits ici : ils sont lus dans .env.docker.local (non commité).
+# Les mots de passe et les clés ne sont jamais écrits ici : ils sont lus dans .env.docker.local (non commité).
 
 services:
 ###> doctrine/doctrine-bundle ###
@@ -24,7 +24,33 @@ services:
       - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
 ###< doctrine/doctrine-bundle ###
 
+###> symfony/mercure-bundle ###
+  # Mercure : prévient les navigateurs des changements (salons, parties)
+  mercure:
+    image: dunglas/mercure
+    restart: unless-stopped
+    # MERCURE_PUBLISHER_JWT_KEY et MERCURE_SUBSCRIBER_JWT_KEY : dans .env.docker.local
+    env_file:
+      - path: .env.docker.local
+        required: true
+    environment:
+      # Doit correspondre à MERCURE_JWT_ISSUER du projet Symfony
+      MERCURE_TRUSTED_ISSUERS: 'https://localhost'
+      # anonymous : les mises à jour publiques (liste des salons) se lisent sans jeton
+      MERCURE_EXTRA_DIRECTIVES: |
+        anonymous
+        cors_origins https://127.0.0.1:8000 http://127.0.0.1:8000
+    volumes:
+      - mercure_data:/data
+      - mercure_config:/config
+###< symfony/mercure-bundle ###
+
 volumes:
 ###> doctrine/doctrine-bundle ###
   mysql_data:
 ###< doctrine/doctrine-bundle ###
+
+###> symfony/mercure-bundle ###
+  mercure_data:
+  mercure_config:
+###< symfony/mercure-bundle ###

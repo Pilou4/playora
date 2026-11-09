@@ -1,0 +1,58 @@
+{# Thème des formulaires Playora : même balisage que les champs écrits à la main (.field).
+   La place des messages d'erreur est toujours réservée pour que rien ne bouge. #}
+{% extends 'form_div_layout.html.twig' %}
+
+{%- block form_row -%}
+    {%- set attr = {'aria-describedby': (help ? id ~ '_help ' : '') ~ id ~ '_error'} -%}
+    {%- if errors|length > 0 -%}
+        {%- set attr = attr|merge({'aria-invalid': 'true'}) -%}
+    {%- endif -%}
+    {%- set widget_attr = {attr: attr} -%}
+    {{- block('form_row_render') -}}
+{%- endblock form_row -%}
+
+{%- block form_row_render -%}
+    <div class="field{% if errors|length > 0 %} field--error{% endif %}">
+        {{- form_label(form) -}}
+        {{- form_widget(form, widget_attr) -}}
+        {{- form_help(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock form_row_render -%}
+
+{%- block form_label -%}
+    {%- set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' field__label')|trim}) -%}
+    {{- parent() -}}
+{%- endblock form_label -%}
+
+{%- block form_widget_simple -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' field__input')|trim}) -%}
+    {{- parent() -}}
+{%- endblock form_widget_simple -%}
+
+{%- block password_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' field__input--with-toggle')|trim}) -%}
+    <div class="field__control">
+        {{- parent() -}}
+        {{- include('_partials/_password_toggle.html.twig', {controls: id}) -}}
+    </div>
+{%- endblock password_widget -%}
+
+{%- block form_help -%}
+    {%- set help_attr = help_attr|merge({class: (help_attr.class|default('') ~ ' field__help')|trim}) -%}
+    {%- if help -%}
+        <p id="{{ id }}_help"{% with {attr: help_attr} %}{{ block('attributes') }}{% endwith %}>{{- block('form_help_content') -}}</p>
+    {%- endif -%}
+{%- endblock form_help -%}
+
+{# Une seule erreur par champ (la première), sur une ligne réservée ;
+   les erreurs du formulaire entier vont dans le bandeau .form__message, placé avant le bouton #}
+{%- block form_errors -%}
+    {%- if compound -%}
+        <div class="form__message{% if errors|length > 0 %} form__message--visible{% endif %}"{% if errors|length > 0 %} role="alert"{% endif %}>
+            {%- if errors|length > 0 %}{{ errors[0].message }}{% endif -%}
+        </div>
+    {%- else -%}
+        <p class="field__error" id="{{ id }}_error">{% if errors|length > 0 %}{{ errors[0].message }}{% endif %}</p>
+    {%- endif -%}
+{%- endblock form_errors -%}

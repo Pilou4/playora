@@ -1,0 +1,12 @@
+{% extends 'emails/_layout.html.twig' %}
+
+{% block subject %}Votre compte Playora existe déjà{% endblock %}
+
+{% block content %}
+    <h1 style="margin:0 0 12px;font-size:26px;line-height:1.2;">Bonjour {{ pseudo }},</h1>
+    <p style="margin:0 0 16px;">Quelqu’un, peut-être vous, vient d’essayer de créer un compte Playora avec cette adresse. Votre compte existe déjà : aucun nouveau compte n’a été créé.</p>
+    <p style="margin:0 0 24px;">
+        <a href="{{ url('app_login') }}" style="display:inline-block;padding:14px 28px;border-radius:999px;background-color:#1b2a4a;color:#ffffff;font-weight:bold;text-decoration:none;">Me connecter</a>
+    </p>
+    <p style="margin:0;font-size:14px;color:#5b6478;">Si ce n’est pas vous, ignorez ce message : votre compte et votre mot de passe n’ont pas changé.</p>
+{% endblock %}

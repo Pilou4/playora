@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Se connecter | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Connectez-vous à Playora pour retrouver vos parties, vos amis et vos scores.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block og_title %}Se connecter | Playora{% endblock %}
+{% block og_description %}Connectez-vous à Playora pour retrouver vos parties, vos amis et vos scores.{% endblock %}
+
+{% block main_id %}connexion{% endblock %}
+
+{% block body %}
+    <main id="connexion" class="auth">
+        <section class="auth__panel" aria-labelledby="connexion-titre">
+            <h1 id="connexion-titre" class="auth__title">Se connecter</h1>
+            <p class="auth__lead">Content de vous revoir, la table vous attend.</p>
+            {% for notice in app.flashes('login_notice') %}
+                <p class="auth__notice" role="status">{{ notice }}</p>
+            {% endfor %}
+
+            <form class="form form--validate" method="post" action="{{ path('app_login') }}" novalidate>
+                <div class="field">
+                    <label class="field__label" for="connexion-email">Adresse e-mail</label>
+                    <input class="field__input" type="email" id="connexion-email" name="_username" value="{{ last_email }}" autocomplete="email" aria-describedby="connexion-email_error" data-required-message="Indiquez votre adresse e-mail." required>
+                    <p class="field__error" id="connexion-email_error"></p>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="connexion-mot-de-passe">Mot de passe</label>
+                    <div class="field__control">
+                        <input class="field__input field__input--with-toggle" type="password" id="connexion-mot-de-passe" name="_password" autocomplete="current-password" aria-describedby="connexion-mot-de-passe_error" data-required-message="Indiquez votre mot de passe." required>
+                        {{ include('_partials/_password_toggle.html.twig', {controls: 'connexion-mot-de-passe'}) }}
+                    </div>
+                    <p class="field__error" id="connexion-mot-de-passe_error"></p>
+                </div>
+
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                <p class="form__forgot"><a class="form__link" href="{{ path('app_forgot_password_request') }}">Mot de passe oublié ?</a></p>
+
+                <div class="form__message{% if error %} form__message--visible{% endif %}"{% if error %} role="alert"{% endif %}>{{ error }}</div>
+
+                <button class="button button--dark button--large button--block" type="submit">Se connecter</button>
+            </form>
+
+            <p class="auth__switch">Pas encore de compte ? <a class="form__link form__link--strong" href="{{ path('app_register') }}">Créer un compte</a></p>
+        </section>
+
+        {{ include('_partials/_auth_visual.html.twig') }}
+    </main>
+{% endblock %}

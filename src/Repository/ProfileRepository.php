@@ -23,4 +23,28 @@ final class ProfileRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['user' => $user]);
     }
+
+    /**
+     * Avatars de plusieurs joueurs en une seule requête (identifiant du compte => code).
+     *
+     * @param list<User> $users
+     *
+     * @return array<int, string>
+     */
+    public function findAvatarCodes(array $users): array
+    {
+        if ([] === $users) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('p')
+            ->select('IDENTITY(p.user) AS user', 'p.avatar')
+            ->where('p.user IN (:users)')
+            ->andWhere('p.avatar IS NOT NULL')
+            ->setParameter('users', $users)
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_column($rows, 'avatar', 'user');
+    }
 }

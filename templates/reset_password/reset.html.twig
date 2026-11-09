@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'form/fields.html.twig' %}
+
+{% block title %}Nouveau mot de passe | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Choisissez un nouveau mot de passe pour votre compte Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block main_id %}nouveau-mot-de-passe{% endblock %}
+
+{% block body %}
+    <main id="nouveau-mot-de-passe" class="auth">
+        <section class="auth__panel" aria-labelledby="nouveau-titre">
+            <h1 id="nouveau-titre" class="auth__title">Nouveau mot de passe</h1>
+            <p class="auth__lead">Choisissez-le bien : vos autres connexions seront fermées.</p>
+
+            {{ form_start(form) }}
+                {{ form_row(form.plainPassword) }}
+                {{ form_row(form.confirmPassword) }}
+                {{ form_errors(form) }}
+
+                <button class="button button--brand button--large button--block" type="submit">Enregistrer le mot de passe</button>
+            {{ form_end(form) }}
+        </section>
+
+        {{ include('_partials/_auth_visual.html.twig', {tagline: 'Pas de panique.', tagline_text: 'Un nouveau mot de passe et vous retrouvez votre place à la table.'}) }}
+    </main>
+{% endblock %}

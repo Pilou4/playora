@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'form/fields.html.twig' %}
+
+{% block title %}Créer un compte | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Créez votre compte Playora gratuitement et jouez à la belote, au tarot, à la coinche ou au rami en ligne.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block og_title %}Créer un compte | Playora{% endblock %}
+{% block og_description %}Créez votre compte Playora gratuitement et jouez à la belote, au tarot, à la coinche ou au rami en ligne.{% endblock %}
+
+{% block main_id %}inscription{% endblock %}
+
+{% block body %}
+    <main id="inscription" class="auth">
+        <section class="auth__panel" aria-labelledby="inscription-titre">
+            <h1 id="inscription-titre" class="auth__title">Créer un compte</h1>
+            <p class="auth__lead">Gratuit, en moins d’une minute.</p>
+
+            {{ form_start(form) }}
+                {{ form_row(form.email) }}
+                {{ form_row(form.pseudo) }}
+                {{ form_row(form.plainPassword) }}
+                {{ form_errors(form) }}
+
+                <button class="button button--brand button--large button--block" type="submit">Créer mon compte</button>
+
+                <p class="form__legal">En créant un compte, vous acceptez les <a class="form__link" href="/conditions-utilisation">conditions d’utilisation</a> et la <a class="form__link" href="/confidentialite">politique de confidentialité</a>.</p>
+            {{ form_end(form) }}
+
+            <p class="auth__switch">Déjà inscrit ? <a class="form__link form__link--strong" href="{{ path('app_login') }}">Se connecter</a></p>
+        </section>
+
+        {{ include('_partials/_auth_visual.html.twig') }}
+    </main>
+{% endblock %}

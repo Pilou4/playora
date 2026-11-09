@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'form/fields.html.twig' %}
+
+{% block title %}Mot de passe oublié | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Recevez un lien pour choisir un nouveau mot de passe Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block og_title %}Mot de passe oublié | Playora{% endblock %}
+{% block og_description %}Recevez un lien pour choisir un nouveau mot de passe Playora.{% endblock %}
+
+{% block main_id %}mot-de-passe-oublie{% endblock %}
+
+{% block body %}
+    {% set link_error = app.flashes('reset_error')|first %}
+    <main id="mot-de-passe-oublie" class="auth">
+        <section class="auth__panel" aria-labelledby="oubli-titre">
+            <h1 id="oubli-titre" class="auth__title">Mot de passe oublié</h1>
+            <p class="auth__lead">Indiquez l’adresse de votre compte : nous vous envoyons un lien pour en choisir un nouveau.</p>
+
+            {{ form_start(form) }}
+                {{ form_row(form.email) }}
+
+                {% if link_error %}
+                    <div class="form__message form__message--visible" role="alert">{{ link_error }}</div>
+                {% else %}
+                    {{ form_errors(form) }}
+                {% endif %}
+
+                <button class="button button--dark button--large button--block" type="submit">Recevoir le lien</button>
+            {{ form_end(form) }}
+
+            <p class="auth__switch">Ça vous revient ? <a class="form__link form__link--strong" href="{{ path('app_login') }}">Se connecter</a></p>
+        </section>
+
+        {{ include('_partials/_auth_visual.html.twig', {tagline: 'Pas de panique.', tagline_text: 'Un nouveau mot de passe et vous retrouvez votre place à la table.'}) }}
+    </main>
+{% endblock %}

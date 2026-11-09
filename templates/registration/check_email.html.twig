@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Vérifiez votre boîte mail | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Confirmez votre adresse e-mail pour activer votre compte Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block main_id %}verifiez-vos-emails{% endblock %}
+
+{% block body %}
+    <main id="verifiez-vos-emails" class="auth">
+        <section class="auth__panel auth__panel--message auth__panel--waiting" aria-labelledby="verification-titre" data-status-url="{{ path('app_register_status') }}" data-confirmed-url="{{ path('app_register_confirmed') }}">
+            <p class="auth__live" role="status"><span class="auth__live-dot" aria-hidden="true"></span>Cette page se met à jour toute seule dès que vous cliquez sur le lien.</p>
+            <img class="auth__illustration" src="{{ asset('images/illustrations/enveloppe.svg') }}" width="240" height="200" alt="">
+            <h1 id="verification-titre" class="auth__title">Vérifiez votre boîte mail</h1>
+            <p class="auth__lead">
+                Nous venons d’envoyer un lien à
+                {% if email %}<strong class="auth__email">{{ email }}</strong>{% else %}votre adresse{% endif %}.
+                Cliquez dessus pour activer votre compte.
+            </p>
+            <p class="auth__note">Le lien est valable 1 heure. Pensez à regarder dans les courriers indésirables.</p>
+
+            <form class="auth__inline-form" method="post" action="{{ path('app_register_resend') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                <p class="auth__note">
+                    Rien reçu ?
+                    <button class="form__link-button" type="submit">Renvoyer l’e-mail</button>
+                    ·
+                    <a class="form__link form__link--strong" href="{{ path('app_register') }}">Modifier l’adresse</a>
+                </p>
+            </form>
+        </section>
+
+        {{ include('_partials/_auth_visual.html.twig', {tagline: 'Plus qu’une étape.', tagline_text: 'Confirmez votre adresse et la partie peut commencer.'}) }}
+    </main>
+{% endblock %}

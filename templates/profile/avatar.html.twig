@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon avatar | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Composez votre avatar Playora pièce par pièce.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block og_title %}Mon avatar | Playora{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'avatar']) }}{% endblock %}
+
+{% block main_id %}avatar{% endblock %}
+
+{% block body %}
+    <main id="avatar" class="avatar-page"
+          data-pieces-url="{{ path('api_avatar_pieces') }}"
+          data-save-url="{{ path('api_avatar_update') }}"
+          data-icons-url="{{ asset('images/icones/') }}"
+          data-csrf="{{ csrf_token('submit') }}"
+          data-code="{{ code }}"
+          data-preview="{{ preview }}">
+        <h1 class="visually-hidden">Mon avatar</h1>
+
+        <div class="avatar-editor">
+            {# Aperçu, historique, âge et tirages #}
+            <section class="avatar-editor__preview" aria-label="Aperçu">
+                <figure class="avatar-editor__frame">
+                    <img class="avatar-editor__image" src="{{ path('app_avatar_image', {code: preview, v: avatar_version()}) }}" width="240" height="300" alt="Aperçu de votre avatar">
+                </figure>
+                <div class="avatar-editor__history">
+                    <button class="avatar-editor__button avatar-editor__undo" type="button" disabled>
+                        <img src="{{ asset('images/icones/avatar-retour.svg') }}" width="16" height="16" alt="">Retour
+                    </button>
+                    <button class="avatar-editor__button avatar-editor__new" type="button">Nouveau</button>
+                    <button class="avatar-editor__button avatar-editor__redo" type="button" disabled>
+                        <img src="{{ asset('images/icones/avatar-suite.svg') }}" width="16" height="16" alt="">Suite
+                    </button>
+                </div>
+                <div class="avatar-editor__row">
+                    <div class="avatar-age" role="group" aria-label="Âge"></div>
+                    <div class="avatar-editor__dice">
+                        <button class="avatar-editor__dice-button avatar-editor__random" type="button">Aléatoire</button>
+                        <button class="avatar-editor__dice-button avatar-editor__dice-button--crazy avatar-editor__crazy" type="button">Fou</button>
+                    </div>
+                </div>
+            </section>
+
+            {# Catégories, onglets, vignettes, couleurs #}
+            <section class="avatar-editor__side" aria-label="Pièces de l’avatar">
+                <div class="avatar-editor__head">
+                    <p class="avatar-editor__current">
+                        <span class="avatar-editor__current-icon"><img class="avatar-editor__current-image" src="{{ asset('images/icones/avatar-cheveux.svg') }}" width="34" height="34" alt=""></span>
+                        <span class="avatar-editor__current-label"></span>
+                    </p>
+                    <div class="avatar-editor__categories" role="tablist" aria-label="Catégories"></div>
+                </div>
+                <div class="avatar-editor__tabs" role="tablist" aria-label="Filtres"></div>
+                <div class="avatar-editor__grid" role="tabpanel"></div>
+                <div class="avatar-editor__footer">
+                    <button class="avatar-editor__colors-toggle" type="button" aria-expanded="false" aria-controls="avatar-couleurs">
+                        <span class="avatar-editor__swatches"></span>Régler les couleurs
+                    </button>
+                    <a class="avatar-editor__quit" href="{{ path('app_profile') }}">Terminer sans enregistrer</a>
+                    <button class="avatar-editor__save" type="button">Enregistrer</button>
+                </div>
+                <div class="avatar-colors" id="avatar-couleurs"></div>
+                <p class="avatar-editor__status" role="status" aria-live="polite"></p>
+            </section>
+        </div>
+    </main>
+{% endblock %}

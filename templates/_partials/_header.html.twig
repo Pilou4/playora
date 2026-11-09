@@ -1,6 +1,7 @@
+{% set current_route = app.request.attributes.get('_route') %}
 <header class="site-header">
     <div class="site-header__inner">
-        <a class="site-header__brand" href="{{ path('app_home') }}"{% if app.request.attributes.get('_route') == 'app_home' %} aria-current="page"{% endif %}>
+        <a class="site-header__brand" href="{{ path('app_home') }}"{% if current_route == 'app_home' %} aria-current="page"{% endif %}>
             <picture>
                 <source media="(max-width: 29.99em)" srcset="{{ asset('images/logo/playora-icone.svg') }}" width="200" height="200">
                 <img class="site-header__logo" src="{{ asset('images/logo/playora-logo.svg') }}" width="659" height="160" alt="Playora, retour à l'accueil">
@@ -18,8 +19,51 @@
         </nav>
 
         <div class="site-header__account">
-            <a class="button button--ghost" href="/connexion">Se connecter</a>
-            <a class="button button--dark" href="/inscription">Créer un compte</a>
+            {% if app.user %}
+                {% set avatar_url = player_avatar_url() %}
+                {% set avatar_initial = app.user.pseudo|first|upper %}
+                <div class="account-menu">
+                    <button class="account-menu__toggle" type="button" aria-expanded="false" aria-controls="menu-compte">
+                        {% if avatar_url %}
+                            <img class="account-menu__avatar" src="{{ avatar_url }}" width="34" height="34" alt="">
+                        {% else %}
+                            <span class="account-menu__avatar account-menu__avatar--initial" aria-hidden="true">{{ avatar_initial }}</span>
+                        {% endif %}
+                        <span class="site-header__pseudo account-menu__pseudo">{{ app.user.pseudo }}</span>
+                        <span class="visually-hidden">: menu du compte</span>
+                        <img class="account-menu__chevron" src="{{ asset('images/icones/chevron-bas.svg') }}" width="14" height="14" alt="">
+                    </button>
+
+                    <div class="account-menu__panel" id="menu-compte">
+                        <ul class="account-menu__list">
+                            <li>
+                                <a class="account-menu__item" href="{{ path('app_profile') }}"{% if current_route == 'app_profile' %} aria-current="page"{% endif %}>
+                                    <img class="account-menu__icon" src="{{ asset('images/icones/profil.svg') }}" width="20" height="20" alt="">
+                                    Mon profil
+                                </a>
+                            </li>
+                            <li>
+                                <a class="account-menu__item" href="{{ path('app_profile_avatar') }}"{% if current_route == 'app_profile_avatar' %} aria-current="page"{% endif %}>
+                                    <img class="account-menu__icon" src="{{ asset('images/icones/avatar.svg') }}" width="20" height="20" alt="">
+                                    Changer d’avatar
+                                </a>
+                            </li>
+                            <li class="account-menu__separator">
+                                <form method="post" action="{{ path('app_logout') }}">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                                    <button class="account-menu__item account-menu__item--danger" type="submit">
+                                        <img class="account-menu__icon" src="{{ asset('images/icones/sortie.svg') }}" width="20" height="20" alt="">
+                                        Se déconnecter
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            {% else %}
+                <a class="button button--ghost" href="{{ path('app_login') }}"{% if current_route == 'app_login' %} aria-current="page"{% endif %}>Se connecter</a>
+                <a class="button button--dark" href="{{ path('app_register') }}"{% if current_route == 'app_register' %} aria-current="page"{% endif %}>Créer un compte</a>
+            {% endif %}
         </div>
     </div>
 </header>

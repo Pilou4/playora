@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Choisissez votre avatar | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Choisissez l’avatar que les autres joueurs verront à la table.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block og_title %}Choisissez votre avatar | Playora{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'avatar']) }}{% endblock %}
+
+{% block main_id %}bienvenue{% endblock %}
+
+{% block body %}
+    <main id="bienvenue" class="welcome">
+        <header class="welcome__header">
+            <h1 class="welcome__title">Bienvenue {{ app.user.pseudo }} ! Choisissez votre avatar</h1>
+            <p class="welcome__lead">C’est lui que les autres joueurs verront à la table. Vous pourrez le changer quand vous voulez.</p>
+        </header>
+
+        <form class="welcome__form" method="post" action="{{ path('app_welcome') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+
+            <fieldset class="welcome__card">
+                <legend class="visually-hidden">Avatars</legend>
+                <ul class="welcome__gallery">
+                    {% for code in gallery %}
+                        <li class="welcome__item">
+                            <input class="welcome__radio visually-hidden" type="radio" name="avatar" id="avatar-{{ loop.index }}" value="{{ code }}" aria-describedby="bienvenue-erreur">
+                            <label class="welcome__choice" for="avatar-{{ loop.index }}">
+                                <img class="welcome__image" src="{{ path('app_avatar_image', {code: code, v: avatar_version()}) }}" width="120" height="150" alt="Avatar {{ loop.index }}">
+                            </label>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <a class="welcome__compose" href="{{ path('app_profile_avatar') }}">ou composer le mien pièce par pièce</a>
+            </fieldset>
+
+            {# Place réservée au message : rien ne bouge quand il s'affiche #}
+            <p class="welcome__error" id="bienvenue-erreur" role="alert">{{ error }}</p>
+
+            <button class="button button--brand button--large welcome__submit" type="submit">C’est parti</button>
+        </form>
+    </main>
+{% endblock %}

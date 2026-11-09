@@ -15,7 +15,7 @@
     {% set cards = 'images/cartes/francais/moderne/' %}
 
     {% set games = [
-        {name: 'Belote', info: '4 joueurs · 2 équipes · 32 cartes', url: '/jeux/belote', theme: 'orange', cards: ['carreau/valet', 'coeur/roi']},
+        {name: 'Belote', info: '4 joueurs · 2 équipes · 32 cartes', url: path('app_game_lobby', {game: 'belote'}), theme: 'orange', cards: ['carreau/valet', 'coeur/roi']},
         {name: 'Tarot', info: '3 à 5 joueurs · 78 cartes', url: null, theme: 'teal', cards: ['pique/as', 'pique/dame']},
         {name: 'Coinche', info: '4 joueurs · enchères', url: null, theme: 'yellow', cards: ['carreau/10', 'coeur/7']},
         {name: 'Rami', info: '2 à 6 joueurs · combinaisons', url: null, theme: 'navy', cards: ['trefle/8', 'trefle/dame']},
@@ -34,7 +34,7 @@
                     <h1 id="accueil-titre" class="hero__title">Vos jeux de cartes, en vrai et partout.</h1>
                     <p class="hero__lead">Belote, tarot, coinche et rami. Jouez avec vos amis ou avec d’autres joueurs, en quelques secondes.</p>
                     <div class="hero__actions">
-                        <a class="button button--dark button--large" href="/jeux/belote">Jouer maintenant</a>
+                        <a class="button button--dark button--large" href="{{ path('app_game_lobby', {game: 'belote'}) }}">Jouer maintenant</a>
                         <a class="button button--light button--large" href="/salons/nouveau">Inviter des amis</a>
                     </div>
                 </div>

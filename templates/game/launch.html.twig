@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Partie de {{ room.game.label|lower }} | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Votre partie de {{ room.game.label|lower }} commence.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'games']) }}{% endblock %}
+
+{% block main_id %}partie{% endblock %}
+
+{% block body %}
+    <main id="partie" class="launch">
+        <h1 class="visually-hidden">Partie de {{ room.game.label|lower }}, salon n° {{ room.id }}</h1>
+
+        <section class="launch__intro" aria-label="Les équipes">
+            <p class="launch__rules">{{ room.game.label }} · Salon n° {{ room.id }} · {{ room.targetPoints }} points · {{ room.announcements ? 'avec' : 'sans' }} annonces</p>
+            {% for team in [1, 2] %}
+                <div class="launch__team launch__team--{{ team }}">
+                    <h2 class="launch__team-name">Équipe {{ team }}</h2>
+                    <ul class="launch__players">
+                        {% for seat in room.seats|filter(seat => seat.team == team) %}
+                            <li class="launch__player">
+                                <span class="launch__avatar avatar avatar--{{ seat.user.id % 7 }}" aria-hidden="true">{{ seat.user.pseudo|first|upper }}</span>
+                                <span class="launch__name">{{ seat.user.pseudo }}{% if seat.user.id == app.user.id %} (vous){% endif %}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+            <p class="launch__vs" aria-hidden="true">VS</p>
+            <p class="launch__countdown" role="status"><span class="launch__count">3</span> La partie commence…</p>
+        </section>
+
+        {# Provisoire : remplacé par la table de jeu (assets/styles/game/belote.css et assets/js/game/belote.js) #}
+        <section class="launch__table" aria-labelledby="table-titre">
+            <h2 id="table-titre" class="launch__table-title">La table arrive bientôt</h2>
+            <p class="launch__table-text">Les équipes sont formées et la partie est enregistrée. Le jeu lui-même est la prochaine étape.</p>
+            <a class="button button--dark" href="{{ path('app_game_lobby', {game: room.game.value}) }}">Retour aux salons</a>
+        </section>
+    </main>
+{% endblock %}

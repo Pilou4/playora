@@ -1,0 +1,14 @@
+{% extends 'emails/_layout.html.twig' %}
+
+{% block subject %}Confirmez votre adresse e-mail{% endblock %}
+
+{% block content %}
+    <h1 style="margin:0 0 12px;font-size:26px;line-height:1.2;">Bienvenue, {{ pseudo }} !</h1>
+    <p style="margin:0 0 24px;">Il ne reste qu’à confirmer votre adresse pour activer votre compte Playora.</p>
+    <p style="margin:0 0 24px;">
+        <a href="{{ signedUrl }}" style="display:inline-block;padding:14px 28px;border-radius:999px;background-color:#1b2a4a;color:#ffffff;font-weight:bold;text-decoration:none;">Confirmer mon adresse</a>
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;color:#5b6478;">Ce lien est valable 1 heure. Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :</p>
+    <p style="margin:0 0 24px;font-size:13px;word-break:break-all;"><a href="{{ signedUrl }}" style="color:#1b2a4a;">{{ signedUrl }}</a></p>
+    <p style="margin:0;font-size:14px;color:#5b6478;">Vous n’êtes pas à l’origine de cette inscription ? Ignorez simplement ce message.</p>
+{% endblock %}
