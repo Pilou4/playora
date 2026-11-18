@@ -88,6 +88,24 @@ final class BeloteBotTest extends TestCase
         self::assertSame('coeur-8', $this->played($state));
     }
 
+    public function testTakerKeepsHisLastTrumpToCut(): void
+    {
+        // Valet et 9 déjà joués : il ne reste à la place 0 que la Dame d'atout, qui n'est pas maître.
+        // Il la garde pour couper et entame ailleurs.
+        $state = $this->playing(0, ['coeur-dame', 'pique-as', 'trefle-7'], []);
+        $state->history = self::trick(0, 'coeur-valet', 1, 'coeur-7', 2, 'coeur-8', 3, 'pique-7', 0, 'coeur-9', 1, 'coeur-roi', 2, 'trefle-8', 3, 'carreau-8');
+
+        self::assertNotSame('coeur-dame', $this->played($state));
+    }
+
+    public function testTakerKeepsHisLastMasterTrumpWhileSeveralTrumpsAreHidden(): void
+    {
+        // Seul atout restant : le Valet, maître. Il reste plusieurs atouts cachés : le Valet sert à couper plus tard.
+        $state = $this->playing(0, ['coeur-valet', 'pique-as', 'trefle-7'], []);
+
+        self::assertNotSame('coeur-valet', $this->played($state));
+    }
+
     public function testTakersPartnerLeadsTheJackStraightAway(): void
     {
         $state = $this->playing(2, ['coeur-valet', 'coeur-7', 'pique-as', 'trefle-7'], []);
@@ -118,6 +136,32 @@ final class BeloteBotTest extends TestCase
         self::assertSame('pique-10', $this->played($state));
     }
 
+    public function testBotKeepsItsAceWhenLoadingItsPartnersTrick(): void
+    {
+        // Le partenaire (place 2) tient le pli à trèfle : la place 0 n'a pas de trèfle,
+        // elle charge avec son 10 de pique et garde l'As de carreau, qui fera un pli plus tard
+        $state = $this->playing(0, ['carreau-as', 'carreau-8', 'pique-10'], [1, 'trefle-8', 2, 'trefle-as', 3, 'trefle-9'], turn: 0);
+
+        self::assertSame('pique-10', $this->played($state));
+    }
+
+    public function testBotGivesAnAceWhoseSuitIsCut(): void
+    {
+        // Un adversaire (place 1) n'a plus de carreau : l'As de carreau ne fera plus de pli, autant le donner
+        $state = $this->playing(0, ['carreau-as', 'carreau-8', 'pique-10'], [1, 'trefle-8', 2, 'trefle-as', 3, 'trefle-9'], turn: 0);
+        $state->history = [...self::trick(0, 'carreau-7', 1, 'coeur-7', 2, 'carreau-9', 3, 'carreau-dame'), ...$state->trick];
+
+        self::assertSame('carreau-as', $this->played($state));
+    }
+
+    public function testBotGivesAnAceWhenItKeepsTheTenAndTheKing(): void
+    {
+        // Avec le 10 et le Roi derrière, l'As peut partir : le 10 devient maître
+        $state = $this->playing(0, ['carreau-as', 'carreau-10', 'carreau-roi', 'pique-8'], [1, 'trefle-8', 2, 'trefle-as', 3, 'trefle-9'], turn: 0);
+
+        self::assertSame('carreau-as', $this->played($state));
+    }
+
     public function testBotDoesNotThrowPointsOnALostTrick(): void
     {
         // L'adversaire a joué l'As de trèfle : sans trèfle ni atout, la place 0 se défausse d'une petite carte
@@ -133,6 +177,24 @@ final class BeloteBotTest extends TestCase
         $state = $this->playing(1, ['pique-as', 'pique-roi', 'pique-7'], [1, 'pique-dame', 2, 'pique-8', 3, 'pique-9'], turn: 0);
 
         self::assertSame('pique-roi', $this->played($state));
+    }
+
+    public function testBotWinsWithTheAceWhenItAlsoHoldsTheTen(): void
+    {
+        // Pique demandé, personne n'a coupé, la place 0 joue en dernier avec l'As et le 10 :
+        // elle prend avec l'As (11 points) et garde le 10, devenu maître.
+        $state = $this->playing(1, ['pique-as', 'pique-10', 'trefle-7'], [1, 'pique-8', 2, 'pique-7', 3, 'pique-dame'], turn: 0);
+
+        self::assertSame('pique-as', $this->played($state));
+    }
+
+    public function testBotTakesWithTheTenAndTheKingTogether(): void
+    {
+        // Avec le 10 et le Roi (l'As déjà tombé), on prend avec le 10 : il rapporte plus et le Roi devient maître
+        $state = $this->playing(1, ['pique-10', 'pique-roi', 'trefle-7'], [1, 'pique-8', 2, 'pique-7', 3, 'pique-dame'], turn: 0);
+        $state->history = [...self::trick(0, 'pique-as', 1, 'pique-9', 2, 'carreau-7', 3, 'carreau-8'), ...$state->trick];
+
+        self::assertSame('pique-10', $this->played($state));
     }
 
     /**

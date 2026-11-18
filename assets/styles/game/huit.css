@@ -1,0 +1,304 @@
+/* ==========================================================================
+   8 américain (disposition A : table ronde). Le cadre, la barre du haut, le tapis et les fenêtres viennent
+   de belote.css ; les joueurs, la main, les boutons et la fin de manche, de rami.css.
+   Ici : les cartes de dos des adversaires, la pioche et la pile au centre, la couleur demandée et le choix d'une couleur.
+   ========================================================================== */
+
+.huit .rami__frame {
+    --fan-w: 3.4cqw;
+    --center-w: 8cqw;
+}
+
+/* ---------- Les autres joueurs : leurs cartes de dos, puis leur nom ---------- */
+
+.huit__opponent {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4cqw;
+    width: 17cqw;
+}
+
+.huit__opponent--left { left: 1.6cqw; top: 13cqw; }
+.huit__opponent--right { right: 1.6cqw; top: 13cqw; }
+.huit__opponent--top { left: 50%; top: 1cqw; transform: translateX(-50%); }
+.huit__opponent--top-left { left: 20%; top: 1cqw; }
+.huit__opponent--top-right { right: 20%; top: 1cqw; }
+
+/* Le nom, sous les cartes : la fiche du rami, posée dans le flux */
+.huit__opponent .rami__opponent {
+    position: static;
+    width: 100%;
+    transform: none;
+}
+
+.huit__opponent--turn .rami__opponent {
+    box-shadow: 0 0 0 0.25cqw #ffd23f, 0 0.4cqw 1cqw rgba(0, 0, 0, 0.2);
+}
+
+.huit__fan {
+    --step: 1.1cqw;
+
+    position: relative;
+    width: calc(var(--fan-w) + (var(--n, 1) - 1) * var(--step));
+    height: calc(var(--fan-w) * 1.4);
+}
+
+.huit__fan .rami__card {
+    --w: var(--fan-w);
+
+    position: absolute;
+    top: 0;
+    left: calc(var(--i) * var(--step));
+}
+
+/* ---------- Au centre : la pioche, la pile, la couleur demandée et le sens ---------- */
+
+.huit__center {
+    position: absolute;
+    top: 15cqw;
+    left: 50%;
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 3cqw;
+    row-gap: 1.2cqw;
+    justify-items: center;
+    transform: translateX(-50%);
+}
+
+.huit__stock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5cqw;
+    width: var(--center-w);
+    padding: 0;
+    border: 0;
+    border-radius: 0.6cqw;
+    background: none;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.huit__stock .rami__card {
+    --w: var(--center-w);
+}
+
+.huit__stock:disabled {
+    cursor: default;
+}
+
+.huit__stock--active {
+    cursor: pointer;
+}
+
+.huit__stock--active .rami__card {
+    box-shadow: 0 0 0 0.25cqw rgba(255, 210, 63, 0.85), 0 0.4cqw 1cqw rgba(0, 0, 0, 0.3);
+}
+
+.huit__stock:focus-visible {
+    outline: 0.3cqw solid #ffd23f;
+    outline-offset: 0.3cqw;
+}
+
+/* Les trois dernières cartes posées, l'une sur l'autre, un peu de travers */
+.huit__pile {
+    position: relative;
+    width: var(--center-w);
+    height: calc(var(--center-w) * 1.4);
+}
+
+.huit__pile-card {
+    --w: var(--center-w);
+
+    position: absolute;
+    inset: 0;
+    transform: rotate(var(--angle, 0deg));
+}
+
+.huit__status {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1cqw;
+    margin: 0;
+}
+
+.huit__suit,
+.huit__direction {
+    padding: 0.4cqw 1cqw;
+    border-radius: 99px;
+    background: rgba(255, 250, 240, 0.92);
+    color: #1b2a4a;
+    font: 700 min(1.1cqw, 0.85rem) var(--font-body);
+    white-space: nowrap;
+}
+
+.huit__suit--red {
+    color: #c8102e;
+}
+
+/* ---------- La main : les cartes jouables bien visibles, les autres un peu grisées ---------- */
+
+.huit__card--playable {
+    translate: 0 -1cqw;
+}
+
+.huit__card--playable:hover {
+    translate: 0 -1.8cqw;
+}
+
+/* Le 8 choisi, en attente de sa couleur */
+.huit .rami__card--selected {
+    translate: 0 -2.2cqw;
+}
+
+.huit__card--off {
+    cursor: default;
+    filter: brightness(0.72);
+}
+
+/* Les cartes de la main restent lisibles même désactivées (pas l'opacité des boutons) */
+.huit .rami__card--hand:disabled {
+    cursor: default;
+}
+
+/* ---------- Choix de la couleur après un 8 ---------- */
+
+.huit__suits {
+    position: absolute;
+    right: 2.4cqw;
+    bottom: 13cqw;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 0.6cqw;
+    padding: 1cqw;
+    border-radius: 1.2cqw;
+    background: rgba(255, 250, 240, 0.96);
+    box-shadow: 0 0.6cqw 1.6cqw rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(0.8cqw);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+}
+
+.huit__suits--visible {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+}
+
+.huit__suits-title {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #1b2a4a;
+    font: 800 min(1.2cqw, 0.9rem) var(--font-display);
+    text-align: center;
+}
+
+.huit__suit-choice {
+    display: flex;
+    align-items: center;
+    gap: 0.5cqw;
+    min-height: 32px;
+    padding: 0.4cqw 1cqw;
+    border: 0;
+    border-radius: 99px;
+    background: #efe7d6;
+    color: #1b2a4a;
+    font: 700 min(1.05cqw, 0.8rem) var(--font-body);
+    cursor: pointer;
+}
+
+.huit__suit-choice img {
+    width: min(1.8cqw, 22px);
+    height: auto;
+}
+
+.huit__suit-choice:hover,
+.huit__suit-choice:focus-visible {
+    background: #ffd23f;
+}
+
+.huit__suit-choice:focus-visible {
+    outline: 0.25cqw solid #1b2a4a;
+    outline-offset: 0.1cqw;
+}
+
+/* ---------- Téléphone ---------- */
+
+@media (max-width: 640px) {
+    .huit .rami__frame {
+        --fan-w: 18px;
+        --center-w: 56px;
+    }
+
+    /* Les adversaires en haut, sur une ligne */
+    .huit .rami__opponents {
+        inset: 6px 6px auto;
+        display: flex;
+        gap: 4px;
+    }
+
+    .huit__opponent {
+        position: static;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        transform: none;
+    }
+
+    .huit__fan {
+        --step: 5px;
+    }
+
+    .huit__center {
+        top: 34%;
+        column-gap: 20px;
+        row-gap: 10px;
+    }
+
+    .huit__suit,
+    .huit__direction {
+        padding: 3px 8px;
+        font-size: 11px;
+    }
+
+    .huit__card--playable {
+        translate: 0 -8px;
+    }
+
+    .huit__card--playable:hover {
+        translate: 0 -8px;
+    }
+
+    .huit__suits {
+        right: 8px;
+        bottom: 160px;
+        gap: 6px;
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    .huit__suits-title {
+        font-size: 13px;
+    }
+
+    .huit__suit-choice {
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 12px;
+    }
+
+    .huit__suit-choice img {
+        width: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .huit__suits,
+    .huit__suits--visible {
+        transition: none;
+    }
+}

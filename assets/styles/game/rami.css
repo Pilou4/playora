@@ -1,0 +1,584 @@
+/* ==========================================================================
+   Rami (disposition A : table ronde). Le cadre, la barre du haut, le tapis, les fenêtres et les messages
+   viennent de belote.css ; ici, les adversaires, les combinaisons, la pioche, la main et les boutons.
+   ========================================================================== */
+
+.rami__frame {
+    --hand-w: 7.6cqw;
+    --meld-w: 3.6cqw;
+    --pile-w: 6cqw;
+
+    /* La main dépasse en bas du tapis : choisir une carte ne doit jamais faire défiler le plateau */
+    overflow: clip;
+}
+
+/* ---------- Barre du haut : temps du tour, pénalités ---------- */
+
+.rami__toolbar {
+    gap: 1.6cqw;
+}
+
+.rami__clock {
+    position: relative;
+    flex: 0 0 13cqw;
+    height: min(1.2cqw, 12px);
+    overflow: hidden;
+    border-radius: 99px;
+    background: #e9e1cf;
+}
+
+.rami__clock-fill {
+    --left: 1;
+
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #3fbf7f, #b9d94a 70%, #ffd23f);
+    transform: scaleX(var(--left));
+    transform-origin: left center;
+    transition: transform 0.25s linear;
+}
+
+.rami__clock-fill--late {
+    background: linear-gradient(90deg, #ff3d7f, #ff8a3d);
+}
+
+.rami__score {
+    margin: 0 0 0 auto;
+    color: #1b2a4a;
+    font: 600 min(1.2cqw, 0.85rem) var(--font-body);
+    white-space: nowrap;
+}
+
+.rami__score-value {
+    font: 800 min(1.7cqw, 1.15rem) var(--font-display);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Cartes ---------- */
+
+.rami__card {
+    box-shadow: 0 0.15cqw 0.4cqw rgba(0, 0, 0, 0.28);
+}
+
+/* ---------- Les autres joueurs, autour de la table ---------- */
+
+.rami__opponents {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.rami__opponent {
+    position: absolute;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.8cqw;
+    align-items: center;
+    width: 17cqw;
+    padding: 0.7cqw 0.9cqw;
+    border-radius: 1cqw;
+    background: rgba(255, 250, 240, 0.92);
+    color: #1b2a4a;
+    box-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.2s ease;
+}
+
+.rami__opponent--turn {
+    box-shadow: 0 0 0 0.25cqw #ffd23f, 0 0.4cqw 1cqw rgba(0, 0, 0, 0.2);
+}
+
+.rami__opponent--left { left: 1.6cqw; top: 14cqw; }
+.rami__opponent--right { right: 1.6cqw; top: 14cqw; }
+.rami__opponent--top { left: 50%; top: 1.4cqw; transform: translateX(-50%); }
+.rami__opponent--top-left { left: 22%; top: 1.4cqw; }
+.rami__opponent--top-right { right: 22%; top: 1.4cqw; }
+
+.rami__avatar {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 3.2cqw;
+    height: 3.2cqw;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #e9e1cf;
+    font: 800 1.4cqw var(--font-display);
+}
+
+.rami__avatar img {
+    width: 100%;
+    height: 100%;
+}
+
+.rami__opponent-name,
+.rami__opponent-info {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rami__opponent-name {
+    font: 800 1.1cqw var(--font-display);
+}
+
+.rami__opponent-info {
+    font: 600 0.9cqw var(--font-body);
+    opacity: 0.75;
+}
+
+/* ---------- Combinaisons posées, au centre ---------- */
+
+.rami__melds {
+    position: absolute;
+    top: 8.5cqw;
+    right: 22cqw;
+    bottom: 22cqw;
+    left: 21cqw;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1cqw 1.6cqw;
+    align-content: start;
+    padding: 1.2cqw;
+    overflow: auto;
+    border-radius: 1.6cqw;
+    background: rgba(0, 0, 0, 0.14);
+}
+
+.rami__meld-owner {
+    margin: 0 0 0.4cqw;
+    color: #ffd23f;
+    font: 800 0.85cqw var(--font-display);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.rami__meld-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6cqw;
+}
+
+.rami__meld {
+    display: inline-flex;
+    padding: 0.35cqw;
+    border: 0;
+    border-radius: 0.6cqw;
+    background: rgba(255, 255, 255, 0.08);
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.rami__meld:disabled {
+    cursor: default;
+}
+
+/* Une carte choisie : chaque combinaison peut la recevoir */
+.rami__meld--target {
+    cursor: pointer;
+}
+
+.rami__meld--target:hover,
+.rami__meld--target:focus-visible {
+    background: rgba(255, 210, 63, 0.18);
+    box-shadow: 0 0 0 0.25cqw rgba(255, 210, 63, 0.85);
+    outline: none;
+}
+
+.rami__meld .rami__card {
+    --w: var(--meld-w);
+}
+
+.rami__meld .rami__card + .rami__card {
+    margin-left: calc(var(--meld-w) * -0.6);
+}
+
+.rami__meld-empty {
+    grid-column: 1 / -1;
+    align-self: center;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.8);
+    font: 600 1.05cqw var(--font-body);
+    text-align: center;
+}
+
+/* ---------- Pioche et défausse, à droite ---------- */
+
+.rami__piles {
+    position: absolute;
+    top: 25cqw;
+    right: 2.4cqw;
+    display: flex;
+    gap: 1.4cqw;
+}
+
+.rami__pile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5cqw;
+    width: var(--pile-w);
+    padding: 0;
+    border: 0;
+    border-radius: 0.6cqw;
+    background: none;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.rami__pile .rami__card {
+    --w: var(--pile-w);
+}
+
+.rami__pile:disabled {
+    cursor: default;
+}
+
+.rami__pile--active {
+    cursor: pointer;
+}
+
+.rami__pile--active .rami__card {
+    box-shadow: 0 0 0 0.25cqw rgba(255, 210, 63, 0.85), 0 0.4cqw 1cqw rgba(0, 0, 0, 0.3);
+}
+
+.rami__pile:focus-visible {
+    outline: 0.3cqw solid #ffd23f;
+    outline-offset: 0.3cqw;
+}
+
+/* Défausse vide : sa place reste marquée */
+.rami__pile--empty {
+    padding-top: calc(var(--pile-w) * 1.4);
+    border: 0.15cqw dashed rgba(255, 255, 255, 0.35);
+}
+
+.rami__pile-label {
+    font: 700 0.9cqw var(--font-body);
+    white-space: nowrap;
+}
+
+/* ---------- Combinaisons préparées, puis la main ---------- */
+
+.rami__pending {
+    position: absolute;
+    bottom: 15cqw;
+    left: 50%;
+    display: flex;
+    gap: 0.8cqw;
+    transform: translateX(-50%);
+}
+
+.rami__pending-group {
+    display: inline-flex;
+    padding: 0.35cqw;
+    border: 0.15cqw solid rgba(255, 210, 63, 0.85);
+    border-radius: 0.6cqw;
+    background: rgba(255, 210, 63, 0.15);
+    cursor: pointer;
+}
+
+.rami__pending-group .rami__card {
+    --w: var(--meld-w);
+}
+
+.rami__pending-group .rami__card + .rami__card {
+    margin-left: calc(var(--meld-w) * -0.6);
+}
+
+.rami__actions {
+    position: absolute;
+    bottom: 13cqw;
+    left: 2cqw;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6cqw;
+    width: 18cqw;
+}
+
+.rami__hint {
+    min-height: 2.4em;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font: 600 0.95cqw var(--font-body);
+}
+
+.rami__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6cqw;
+}
+
+.rami__button {
+    height: min(2.8cqw, 32px);
+    padding: 0 min(1.2cqw, 14px);
+    border: 0;
+    border-radius: 99px;
+    background: #efe7d6;
+    color: #1b2a4a;
+    font: 700 min(1.1cqw, 0.8rem) var(--font-body);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.rami__button--brand {
+    background: linear-gradient(#ff7a45, #ff5a2d);
+    color: #fff;
+}
+
+.rami__button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* La main en éventail, en bas : une carte choisie monte et s'entoure de jaune */
+.rami__hand {
+    --step: min(4.4cqw, calc(64cqw / var(--n, 13)));
+
+    position: absolute;
+    bottom: -2.4cqw;
+    left: 50%;
+    width: 0;
+    height: calc(var(--hand-w) * 1.4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rami__hand-item {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    transform: translateX(calc((var(--i) - (var(--n) - 1) / 2) * var(--step) - var(--hand-w) / 2)) rotate(calc((var(--i) - (var(--n) - 1) / 2) * 1.6deg));
+    transform-origin: 50% 180%;
+}
+
+.rami__card--hand {
+    --w: var(--hand-w);
+
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    transition: translate 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rami__card--hand:focus-visible {
+    outline: 0.3cqw solid #ffd23f;
+    outline-offset: 0.15cqw;
+}
+
+.rami__card--selected {
+    translate: 0 -2.2cqw;
+    box-shadow: 0 0 0 0.3cqw #ffd23f, 0 0.6cqw 1.2cqw rgba(0, 0, 0, 0.35);
+}
+
+/* La carte prise dans la défausse : à poser pendant ce tour */
+.rami__card--taken::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border: 0.3cqw solid #14b8a6;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+/* ---------- Fin de manche, fin de partie ---------- */
+
+.rami__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 45;
+    display: grid;
+    place-items: center;
+    background: rgba(8, 30, 32, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.rami__overlay--visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease;
+}
+
+.rami__panel {
+    min-width: 34cqw;
+    max-width: 60cqw;
+    padding: 2.6cqw 3.4cqw;
+    border-radius: 1.6cqw;
+    background: #fffaf0;
+    color: #1b2a4a;
+    text-align: center;
+    box-shadow: 0 1.6cqw 4cqw rgba(0, 0, 0, 0.35);
+}
+
+.rami__panel-title {
+    margin: 0;
+    font: 800 2.4cqw var(--font-display);
+}
+
+.rami__results {
+    display: grid;
+    gap: 0.4cqw;
+    margin: 1.2cqw 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rami__result {
+    padding: 0.6cqw 1cqw;
+    border-radius: 0.6cqw;
+    background: #f3ecdd;
+    font: 700 1.2cqw var(--font-body);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Le lien vers les salons n'apparaît qu'à la fin de la partie */
+.rami__panel-link {
+    display: none;
+    margin-top: 1.8cqw;
+}
+
+.rami__panel-link--visible {
+    display: inline-flex;
+}
+
+/* ---------- Téléphone ---------- */
+
+@media (max-width: 640px) {
+    .rami__frame {
+        --hand-w: 52px;
+        --meld-w: 24px;
+        --pile-w: 44px;
+    }
+
+    .rami__clock,
+    .rami__score {
+        display: none;
+    }
+
+    /* Les adversaires en haut, sur une ligne */
+    .rami__opponents {
+        inset: 6px 6px auto;
+        display: flex;
+        gap: 4px;
+    }
+
+    .rami__opponent {
+        position: static;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+        padding: 4px;
+        border-radius: 8px;
+        text-align: center;
+        transform: none;
+    }
+
+    .rami__avatar {
+        grid-row: auto;
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
+    }
+
+    .rami__opponent-name {
+        max-width: 100%;
+        font-size: 11px;
+    }
+
+    .rami__opponent-info {
+        max-width: 100%;
+        font-size: 10px;
+    }
+
+    .rami__melds {
+        top: 84px;
+        right: 64px;
+        bottom: 236px;
+        left: 6px;
+        grid-template-columns: minmax(0, 1fr);
+        padding: 8px;
+        border-radius: 12px;
+    }
+
+    .rami__meld-owner {
+        font-size: 10px;
+    }
+
+    .rami__meld-empty {
+        font-size: 13px;
+    }
+
+    .rami__piles {
+        top: 90px;
+        right: 8px;
+        flex-direction: column;
+        gap: 8px;
+        transform: none;
+    }
+
+    .rami__pile-label {
+        font-size: 10px;
+    }
+
+    .rami__actions {
+        right: 8px;
+        bottom: 112px;
+        left: 8px;
+        width: auto;
+    }
+
+    .rami__hint {
+        min-height: 0;
+        font-size: 12px;
+    }
+
+    .rami__button {
+        height: 30px;
+        padding: 0 10px;
+        font-size: 12px;
+    }
+
+    .rami__pending {
+        bottom: 196px;
+    }
+
+    .rami__hand {
+        --step: calc((100cqw - 70px) / var(--n, 13));
+
+        bottom: -12px;
+    }
+
+    .rami__card--selected {
+        translate: 0 -14px;
+    }
+
+    .rami__panel {
+        min-width: 0;
+        max-width: calc(100% - 32px);
+        padding: 20px;
+        border-radius: 16px;
+    }
+
+    .rami__panel-title {
+        font-size: 20px;
+    }
+
+    .rami__result {
+        font-size: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rami__clock-fill,
+    .rami__overlay,
+    .rami__card--hand,
+    .rami__meld,
+    .rami__opponent {
+        transition: none;
+    }
+}

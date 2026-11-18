@@ -20,7 +20,7 @@ final class GamePlayerRepository extends ServiceEntityRepository
     }
 
     /**
-     * Joueurs d'une partie, par place (1 à 4).
+     * Joueurs d'une partie, par place (à partir de 1).
      *
      * @return array<int, GamePlayer>
      */
@@ -30,6 +30,38 @@ final class GamePlayerRepository extends ServiceEntityRepository
 
         foreach ($this->findBy(['room' => $room]) as $player) {
             $players[$player->getPosition()] = $player;
+        }
+
+        return $players;
+    }
+
+    /**
+     * Joueurs de plusieurs parties en une requête (pseudos compris), pour les listes de l'admin.
+     *
+     * @param list<int> $rooms
+     *
+     * @return array<int, array<int, GamePlayer>> salon => place => joueur
+     */
+    public function findByRoomIds(array $rooms): array
+    {
+        if ([] === $rooms) {
+            return [];
+        }
+
+        /** @var list<array{0: GamePlayer, room: int|string}> $rows */
+        $rows = $this->createQueryBuilder('p')
+            ->addSelect('u', 'IDENTITY(p.room) AS room')
+            ->leftJoin('p.user', 'u')
+            ->where('p.room IN (:rooms)')
+            ->setParameter('rooms', $rooms)
+            ->orderBy('p.position', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $players = [];
+
+        foreach ($rows as $row) {
+            $players[(int) $row['room']][$row[0]->getPosition()] = $row[0];
         }
 
         return $players;

@@ -11,11 +11,20 @@
 
 {% block body %}
     <main id="adresse-confirmee" class="auth">
-        <section class="auth__panel auth__panel--message auth__panel--confirmed" aria-labelledby="confirmation-titre">
+        <section class="auth__panel auth__panel--message" aria-labelledby="confirmation-titre">
             <img class="auth__illustration" src="{{ asset('images/illustrations/confirme.svg') }}" width="240" height="200" alt="">
             <h1 id="confirmation-titre" class="auth__title">Bienvenue à la table{% if pseudo %}, {{ pseudo }}{% endif %} !</h1>
-            <p class="auth__lead">Votre adresse est confirmée. Vous pouvez maintenant vous connecter et lancer votre première partie.</p>
-            <a class="button button--dark button--large" href="{{ path('app_login') }}">Se connecter</a>
+            {% if other %}
+                {# Lien ouvert dans un navigateur déjà connecté avec un autre compte #}
+                <p class="auth__lead">Le compte{% if pseudo %} « {{ pseudo }} »{% endif %} est confirmé. Ce navigateur est connecté avec un autre compte, « {{ other }} » : déconnectez-vous pour vous connecter avec le nouveau.</p>
+                <form method="post" action="{{ path('app_logout') }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                    <button class="button button--dark button--large" type="submit">Se déconnecter de « {{ other }} »</button>
+                </form>
+            {% else %}
+                <p class="auth__lead">Votre adresse est confirmée. Vous pouvez maintenant vous connecter et lancer votre première partie.</p>
+                <a class="button button--dark button--large" href="{{ path('app_login') }}">Se connecter</a>
+            {% endif %}
         </section>
 
         {{ include('_partials/_auth_visual.html.twig', {tagline: 'C’est parti !', tagline_text: 'Votre compte est prêt, il ne manque plus que vous à la table.'}) }}

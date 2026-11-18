@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\CardBack;
+use App\Enum\CardSet;
+use App\Enum\Carpet;
 use App\Enum\Game;
 use App\Enum\RoomStatus;
+use App\Game\Belote\Variant;
 use App\Enum\RoomVisibility;
 use App\Repository\GameRoomRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -23,7 +27,8 @@ use Doctrine\ORM\Mapping as ORM;
 class GameRoom
 {
     public const int ROUNDS = 1;
-    public const int TURN_SECONDS = 20;
+    public const int TURN_SECONDS = 15;
+    public const int BID_SECONDS = 15;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -57,6 +62,24 @@ class GameRoom
     #[ORM\Column]
     private int $turnSeconds = self::TURN_SECONDS;
 
+    /** Variante choisie à la création (belote, coinche, contrée). */
+    #[ORM\Column(length: 20, enumType: Variant::class, options: ['default' => 'classique'])]
+    private Variant $variant = Variant::Classic;
+
+    /** Tapis et jeu de cartes réglés dans l'admin au moment de la création : une partie en cours ne change pas d'apparence. */
+    #[ORM\Column(length: 20, enumType: Carpet::class, options: ['default' => 'lagon'])]
+    private Carpet $carpet = Carpet::Lagon;
+
+    #[ORM\Column(length: 20, enumType: CardSet::class, options: ['default' => 'moderne'])]
+    private CardSet $cardSet = CardSet::Modern;
+
+    #[ORM\Column(length: 20, enumType: CardBack::class, options: ['default' => 'moderne'])]
+    private CardBack $cardBack = CardBack::Modern;
+
+    /** Temps pour prendre ou passer aux enchères, en secondes. */
+    #[ORM\Column(options: ['default' => self::BID_SECONDS])]
+    private int $bidSeconds = self::BID_SECONDS;
+
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
     private User $host;
@@ -75,15 +98,19 @@ class GameRoom
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $finishedAt = null;
 
-    public function __construct(Game $game, User $host, string $inviteCode, int $targetPoints, RoomVisibility $visibility, bool $announcements)
+    public function __construct(Game $game, User $host, string $inviteCode, int $targetPoints, RoomVisibility $visibility, bool $announcements, int $turnSeconds = self::TURN_SECONDS, int $bidSeconds = self::BID_SECONDS, Variant $variant = Variant::Classic, ?int $playerCount = null)
     {
+        $this->variant = $variant;
+        $this->turnSeconds = $turnSeconds;
+        $this->bidSeconds = $bidSeconds;
         $this->game = $game;
         $this->host = $host;
         $this->inviteCode = $inviteCode;
         $this->targetPoints = $targetPoints;
         $this->visibility = $visibility;
         $this->announcements = $announcements;
-        $this->playerCount = $game->playerCount();
+        // Tarot : 3, 4 ou 5 joueurs ; les autres jeux : le nombre du jeu
+        $this->playerCount = $playerCount ?? $game->playerCount();
         $this->createdAt = new \DateTimeImmutable();
         $this->seats = new ArrayCollection();
 
@@ -150,6 +177,41 @@ class GameRoom
     public function getTurnSeconds(): int
     {
         return $this->turnSeconds;
+    }
+
+    public function getBidSeconds(): int
+    {
+        return $this->bidSeconds;
+    }
+
+    public function getVariant(): Variant
+    {
+        return $this->variant;
+    }
+
+    public function getCarpet(): Carpet
+    {
+        return $this->carpet;
+    }
+
+    public function getCardSet(): CardSet
+    {
+        return $this->cardSet;
+    }
+
+    /**
+     * Apparence choisie dans l'admin, fixée à la création du salon.
+     */
+    public function dress(Carpet $carpet, CardSet $cardSet, CardBack $cardBack = CardBack::Modern): void
+    {
+        $this->carpet = $carpet;
+        $this->cardSet = $cardSet;
+        $this->cardBack = $cardBack;
+    }
+
+    public function getCardBack(): CardBack
+    {
+        return $this->cardBack;
     }
 
     public function getHost(): User

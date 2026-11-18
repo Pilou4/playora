@@ -726,6 +726,50 @@ p {
     }
 }
 
+/* Deux groupes : les jeux à plusieurs, puis les duels (une carte en bandeau sur toute la largeur) */
+.games__group + .games__group {
+    margin-top: var(--space-xl);
+}
+
+.games__group-title {
+    margin: 0 0 var(--space-sm);
+    color: var(--brand-navy);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.25rem;
+}
+
+@media (min-width: 640px) {
+    .games__list--wide {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .game--wide .game__inner {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 1.5rem;
+        align-content: center;
+        align-items: baseline;
+        height: 190px;
+    }
+
+    .game--wide .game__info {
+        margin: 0;
+        padding-right: 220px;
+    }
+
+    .game--wide .game__play {
+        grid-column: 1;
+        justify-self: start;
+        margin-top: var(--space-sm);
+    }
+
+    .game--wide .game__cards {
+        right: 6%;
+        bottom: -3.5rem;
+    }
+}
+
 .game__inner {
     position: relative;
     height: 330px;
@@ -751,6 +795,10 @@ p {
 
 .game--navy .game__inner {
     background-image: linear-gradient(160deg, var(--brand-navy) 35%, var(--brand-navy-light));
+}
+
+.game--pink .game__inner {
+    background-image: linear-gradient(160deg, var(--deep-pink) 35%, var(--brand-pink));
 }
 
 .game__name {
@@ -1376,4 +1424,31 @@ p {
         height: auto;
         filter: drop-shadow(0 14px 18px rgba(80, 20, 40, 0.35));
     }
+}
+
+/* Formulaires de connexion et d'inscription, plus serrés : l'aide d'un champ et son message d'erreur partagent
+   la même place (l'erreur remplace l'aide le temps qu'elle s'affiche ; rien ne bouge) */
+.auth .form {
+    gap: 4px;
+}
+
+.auth .field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.auth .field__label {
+    margin-bottom: 5px;
+}
+
+.auth .field__help,
+.auth .field__error {
+    grid-row: 3;
+    grid-column: 1;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.auth .field--error .field__help {
+    visibility: hidden;
 }

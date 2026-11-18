@@ -1,0 +1,54 @@
+{# Règles des trois Spider (barème GameDuell) : page des salons et fenêtre des règles d'une table.
+   level : le niveau du jeu (App\Game\Spider\SpiderLevel) #}
+{% set pro = level.value == 'pro' %}
+{% set suits = {debutant: 'une seule couleur (pique)', classique: 'deux couleurs (pique et cœur)', pro: 'les quatre couleurs'}[level.value] %}
+{% set points = level.familyPoints %}
+{% if in_dialog|default(false) %}
+<section class="rules rules--dialog">
+{% else %}
+<section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
+{% endif %}
+    <h2 id="regles-titre" class="visually-hidden">Règles du {{ level.label }}</h2>
+    <div class="rules__content">
+
+    <div class="rules__intro">
+        <article class="rules__summary">
+            <h3 class="rules__heading rules__heading--large">Le {{ level.label }} en 30 secondes</h3>
+            <p class="rules__summary-text">De 2 à 5 joueurs : tous reçoivent <strong>exactement les mêmes cartes</strong> et ont <strong>5 minutes</strong>. 104 cartes en {{ suits }}. Rangez des <strong>familles complètes</strong>, du Roi à l’As d’une même couleur. Le meilleur score l’emporte.</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading">Comment jouer</h3>
+            <ol class="rules__steps">
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">1</span>
+                    <div><p class="rules__step-title">Piles de cartes</p><p class="rules__text">Posez une carte sur une carte d’une hauteur juste au-dessus, quelle que soit sa couleur (un 9 sur un 10). N’importe quelle carte va sur une pile vide. Un groupe se déplace d’un coup s’il se suit dans une même couleur.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">2</span>
+                    <div><p class="rules__step-title">Talon</p><p class="rules__text">Choisissez une des 5 piles talon : ses 10 cartes vont une sur chaque pile. Chaque pile doit contenir au moins une carte. {{ pro ? 'Au Pro, on voit toute la pile avant de choisir.' : 'On voit sa première carte avant de choisir.' }}</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">3</span>
+                    <div><p class="rules__step-title">Joker</p><p class="rules__text">{{ pro ? 'Deux piles du Joker' : 'Une pile du Joker' }} : on y pose une seule carte à la fois, pour la reprendre plus tard. Une famille complète part toute seule.</p></div>
+                </li>
+            </ol>
+        </article>
+    </div>
+
+    <article class="rules__box">
+        <h3 class="rules__heading rules__heading--medium">Points</h3>
+        <dl class="rules__announces">
+            <div class="rules__announce"><dt class="rules__announce-name">Carte retournée</dt><dd class="rules__announce-detail">dans les piles de cartes</dd><dd class="rules__announce-points">+{{ level.revealPoints|number_format(0, ',', ' ') }}</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Famille complète</dt><dd class="rules__announce-detail">du Roi à l’As d’une même couleur</dd><dd class="rules__announce-points">+{{ points|number_format(0, ',', ' ') }}</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Pile vidée</dt><dd class="rules__announce-detail">une fois par pile</dd><dd class="rules__announce-points">+{{ level.emptyColumnPoints|number_format(0, ',', ' ') }}</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Tout rangé</dt><dd class="rules__announce-detail">les 104 cartes</dd><dd class="rules__announce-points">+{{ level.finishPoints|number_format(0, ',', ' ') }}</dd></div>
+            {% if level.noJokerPoints > 0 %}
+                <div class="rules__announce"><dt class="rules__announce-name">Sans Joker</dt><dd class="rules__announce-detail">tout rangé sans utiliser la pile du Joker</dd><dd class="rules__announce-points">+{{ level.noJokerPoints|number_format(0, ',', ' ') }}</dd></div>
+            {% endif %}
+            <div class="rules__announce"><dt class="rules__announce-name">Temps restant</dt><dd class="rules__announce-detail">tout rangé : par seconde</dd><dd class="rules__announce-points">+{{ level.pointsPerSecond }}</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Annuler</dt><dd class="rules__announce-detail">le dernier coup (impossible sans assez de points)</dd><dd class="rules__announce-points">−{{ level.undoCost }}</dd></div>
+        </dl>
+    </article>
+
+    </div>
+</section>

@@ -1,0 +1,255 @@
+/* ==========================================================================
+   Golf (disposition A : table ronde). Le cadre, la barre du haut, le tapis et les fenêtres viennent de belote.css ;
+   les fiches des joueurs, les boutons et la fin de trou, de rami.css.
+   Ici : les 6 cartes de chacun en 2 lignes de 3, la pioche, la défausse et la carte piochée au centre.
+   ========================================================================== */
+
+.golf .rami__frame {
+    --mini-w: 3.2cqw;
+    --center-w: 6.4cqw;
+    --me-w: 5.8cqw;
+}
+
+/* ---------- Grilles de 6 cartes ---------- */
+
+.golf__grid {
+    --w: var(--mini-w);
+
+    display: grid;
+    grid-template-columns: repeat(3, var(--w));
+    gap: calc(var(--w) * 0.1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.golf__cell {
+    position: relative;
+    display: block;
+}
+
+/* Paire dans une colonne (même hauteur) : elle compte 0, un liseré turquoise la signale */
+.golf__cell--pair::after {
+    content: "";
+    position: absolute;
+    inset: calc(var(--w) * -0.04);
+    border-radius: calc(var(--w) * 0.1);
+    box-shadow: 0 0 0 max(2px, calc(var(--w) * 0.035)) #14b8a6;
+    pointer-events: none;
+}
+
+.golf__grid .rami__card {
+    --w: inherit;
+
+    width: var(--w);
+}
+
+/* ---------- Les autres joueurs : leurs cartes, puis leur nom ---------- */
+
+.golf__opponent {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5cqw;
+    width: 17cqw;
+}
+
+.golf__opponent--left { left: 1.6cqw; top: 12cqw; }
+.golf__opponent--right { right: 1.6cqw; top: 12cqw; }
+.golf__opponent--top { left: 50%; top: 1cqw; transform: translateX(-50%); }
+.golf__opponent--top-left { left: 20%; top: 1cqw; }
+.golf__opponent--top-right { right: 20%; top: 1cqw; }
+
+/* La fiche du rami, posée dans le flux sous les cartes */
+.golf__opponent .rami__opponent {
+    position: static;
+    width: 100%;
+    transform: none;
+}
+
+.golf__opponent--turn .rami__opponent {
+    box-shadow: 0 0 0 0.25cqw #ffd23f, 0 0.4cqw 1cqw rgba(0, 0, 0, 0.2);
+}
+
+/* ---------- Au centre : la pioche, la défausse et la carte piochée ---------- */
+
+.golf__center {
+    position: absolute;
+    top: 17cqw;
+    left: 50%;
+    display: flex;
+    align-items: flex-start;
+    gap: 2cqw;
+    transform: translateX(-50%);
+}
+
+.golf__pile,
+.golf__drawn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5cqw;
+    width: var(--center-w);
+    min-height: calc(var(--center-w) * 1.4);
+    padding: 0;
+    border: 0;
+    border-radius: 0.6cqw;
+    background: none;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.golf__pile .rami__card,
+.golf__drawn .rami__card {
+    --w: var(--center-w);
+}
+
+.golf__pile:disabled {
+    cursor: default;
+}
+
+.golf__pile--active {
+    cursor: pointer;
+}
+
+.golf__pile--active .rami__card {
+    box-shadow: 0 0 0 0.25cqw rgba(255, 210, 63, 0.85), 0 0.4cqw 1cqw rgba(0, 0, 0, 0.3);
+}
+
+/* Défausse choisie (à prendre, ou pour y jeter la carte piochée) */
+.golf__pile--selected .rami__card {
+    translate: 0 -0.8cqw;
+    box-shadow: 0 0 0 0.3cqw #14b8a6, 0 0.6cqw 1.2cqw rgba(0, 0, 0, 0.35);
+}
+
+.golf__pile:focus-visible {
+    outline: 0.3cqw solid #ffd23f;
+    outline-offset: 0.3cqw;
+}
+
+/* « Carte piochée » peut passer sur deux lignes sur téléphone */
+.golf__drawn .rami__pile-label {
+    white-space: normal;
+    text-align: center;
+}
+
+/* La carte piochée, un peu de travers, comme tenue en main */
+.golf__drawn-card {
+    rotate: 4deg;
+    box-shadow: 0 0 0 0.25cqw #ffd23f, 0 0.8cqw 1.6cqw rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Mes 6 cartes, en grand en bas ---------- */
+
+.golf__me {
+    position: absolute;
+    bottom: 1.2cqw;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6cqw;
+    transform: translateX(-50%);
+}
+
+.golf__grid--me {
+    --w: var(--me-w);
+}
+
+.golf__slot {
+    display: block;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--w) * 0.08);
+    background: none;
+    cursor: default;
+    transition: translate 0.15s ease;
+}
+
+.golf__slot--target {
+    cursor: pointer;
+}
+
+.golf__slot--target .rami__card {
+    box-shadow: 0 0 0 0.25cqw rgba(255, 210, 63, 0.85), 0 0.4cqw 1cqw rgba(0, 0, 0, 0.3);
+}
+
+.golf__slot--target:hover {
+    translate: 0 -0.5cqw;
+}
+
+.golf__slot:focus-visible {
+    outline: 0.3cqw solid #ffd23f;
+    outline-offset: 0.2cqw;
+}
+
+.golf__tag {
+    margin: 0;
+    padding: 0.5cqw 1.4cqw;
+    border-radius: 99px;
+    background: rgba(255, 250, 240, 0.92);
+    color: #1b2a4a;
+    font: 700 min(1.1cqw, 0.85rem) var(--font-body);
+    white-space: nowrap;
+    box-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.2);
+}
+
+.golf__tag--turn {
+    box-shadow: 0 0 0 0.25cqw #ffd23f, 0 0.4cqw 1cqw rgba(0, 0, 0, 0.2);
+}
+
+/* ---------- Téléphone ---------- */
+
+@media (max-width: 640px) {
+    .golf .rami__frame {
+        --mini-w: 16px;
+        --center-w: 54px;
+        --me-w: 64px;
+    }
+
+    /* Les adversaires en haut, sur une ligne */
+    .golf .rami__opponents {
+        inset: 6px 6px auto;
+        display: flex;
+        gap: 4px;
+    }
+
+    .golf__opponent {
+        position: static;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        gap: 4px;
+        transform: none;
+    }
+
+    .golf__center {
+        top: 30%;
+        gap: 14px;
+    }
+
+    .golf__pile,
+    .golf__drawn {
+        gap: 4px;
+    }
+
+    .golf .rami__actions {
+        bottom: 236px;
+    }
+
+    .golf__me {
+        bottom: 10px;
+        gap: 6px;
+    }
+
+    .golf__tag {
+        padding: 4px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .golf__slot {
+        transition: none;
+    }
+}

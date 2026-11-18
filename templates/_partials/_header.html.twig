@@ -11,7 +11,10 @@
         {# Adresses des pages à venir : les liens passeront à path() quand les routes existeront #}
         <nav class="site-nav" aria-label="Menu principal">
             <ul class="site-nav__list">
-                <li><a class="site-nav__link" href="/jeux">Jeux</a></li>
+                <li><a class="site-nav__link" href="{{ path('app_games') }}"{% if current_route == 'app_games' %} aria-current="page"{% endif %}>Jeux</a></li>
+                {% if app.user %}
+                    <li><a class="site-nav__link" href="{{ path('app_my_duels') }}"{% if current_route starts with 'app_my_duels' or current_route == 'app_duel_result' %} aria-current="page"{% endif %}>Mes parties</a></li>
+                {% endif %}
                 <li><a class="site-nav__link" href="/salons">Salons</a></li>
                 <li><a class="site-nav__link" href="/tournois">Tournois</a></li>
                 <li><a class="site-nav__link" href="/classements">Classements</a></li>
@@ -48,6 +51,14 @@
                                     Changer d’avatar
                                 </a>
                             </li>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <li>
+                                    <a class="account-menu__item" href="{{ path('admin_dashboard') }}"{% if current_route starts with 'admin_' %} aria-current="page"{% endif %}>
+                                        <img class="account-menu__icon" src="{{ asset('images/icones/administration.svg') }}" width="20" height="20" alt="">
+                                        Administration
+                                    </a>
+                                </li>
+                            {% endif %}
                             <li class="account-menu__separator">
                                 <form method="post" action="{{ path('app_logout') }}">
                                     <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">

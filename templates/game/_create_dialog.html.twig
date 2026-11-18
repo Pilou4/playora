@@ -3,23 +3,48 @@
 <dialog class="dialog" id="creer-un-salon" aria-labelledby="creer-un-salon-titre">
     <form class="room-form" novalidate>
         <h2 id="creer-un-salon-titre" class="dialog__title">Créer une partie de {{ game.label|lower }}</h2>
-        <p class="dialog__lead">Les équipes seront tirées au sort quand les {{ game.playerCount }} places seront prises.</p>
+        <p class="dialog__lead">{{ game.hasTeams ? 'Les équipes seront tirées au sort quand les ' ~ game.playerCount ~ ' places seront prises.' : (game.isPatience ? 'Duel : votre partie commence tout de suite, les autres joueurs jouent la même donne quand ils vous rejoignent.' : 'Les places seront tirées au sort quand toutes les places seront prises.') }}</p>
 
         <div class="room-form__fixed">
-            <p class="room-form__tile"><span class="room-form__tile-label">Joueurs</span><strong class="room-form__tile-value">{{ game.playerCount }}</strong><span class="room-form__tile-hint">2 équipes de 2</span></p>
-            <p class="room-form__tile"><span class="room-form__tile-label">Manches</span><strong class="room-form__tile-value">1</strong><span class="room-form__tile-hint">Fixé pour l’instant</span></p>
+            {% if game.hasTeams %}
+                <p class="room-form__tile"><span class="room-form__tile-label">Joueurs</span><strong class="room-form__tile-value">{{ game.playerCount }}</strong><span class="room-form__tile-hint">2 équipes de 2</span></p>
+            {% endif %}
+            {% if game.isPatience %}
+                <p class="room-form__tile"><span class="room-form__tile-label">Temps</span><strong class="room-form__tile-value">5 min</strong><span class="room-form__tile-hint">La même donne pour tous</span></p>
+            {% elseif not game.playsInRounds %}
+                <p class="room-form__tile"><span class="room-form__tile-label">Manches</span><strong class="room-form__tile-value">1</strong><span class="room-form__tile-hint">Fixé pour l’instant</span></p>
+            {% endif %}
         </div>
 
-        <fieldset class="segmented">
-            <legend class="segmented__legend">Partie en</legend>
-            <div class="segmented__options">
-                {% for points in game.targetPointsChoices %}
-                    <input class="segmented__input" type="radio" id="points-{{ points }}" name="targetPoints" value="{{ points }}"{% if points == 1001 %} checked{% endif %}>
-                    <label class="segmented__label" for="points-{{ points }}">{{ points }} points</label>
-                {% endfor %}
-            </div>
-        </fieldset>
+        {# Tarot : 3, 4 ou 5 joueurs ; solitaire : 2 à 5 #}
+        {% if game.playerCountChoices|length > 1 %}
+            <fieldset class="segmented">
+                <legend class="segmented__legend">Joueurs</legend>
+                <div class="segmented__options">
+                    {% for players in game.playerCountChoices %}
+                        <input class="segmented__input" type="radio" id="joueurs-{{ players }}" name="players" value="{{ players }}"{% if players == game.playerCount %} checked{% endif %}>
+                        <label class="segmented__label" for="joueurs-{{ players }}">{{ players }} joueurs</label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+        {% endif %}
 
+        {# Un seul choix (solitaire : une manche) : rien à choisir #}
+        {% if game.targetPointsChoices|length > 1 %}
+            <fieldset class="segmented">
+                <legend class="segmented__legend">Partie en</legend>
+                <div class="segmented__options">
+                    {% for points in game.targetPointsChoices %}
+                        <input class="segmented__input" type="radio" id="points-{{ points }}" name="targetPoints" value="{{ points }}"{% if points == game.defaultTargetPoints %} checked{% endif %}>
+                        <label class="segmented__label" for="points-{{ points }}">{{ game.targetLongLabel(points) }}</label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+        {% else %}
+            <input type="hidden" name="targetPoints" value="{{ game.defaultTargetPoints }}">
+        {% endif %}
+
+        {% if game.hasAnnouncements %}
         <div class="switch">
             <div class="switch__text">
                 <label class="switch__label" for="annonces">Annonces</label>
@@ -27,12 +52,15 @@
             </div>
             <input class="switch__input" type="checkbox" id="annonces" name="announcements" aria-describedby="annonces-aide">
         </div>
+        {% endif %}
 
-        <p class="dialog__note">Temps pour jouer une carte : 20 secondes.</p>
+        {% if game.hasTurns %}
+            <p class="dialog__note">{% if game.hasBidding %}Temps pour prendre ou passer : {{ settings.bidSeconds }} secondes. {% endif %}Temps pour jouer {{ game.playsInRounds ? 'son tour' : 'une carte' }} : {{ settings.turnSeconds }} secondes.</p>
+        {% endif %}
 
         <div class="dialog__actions">
             <button class="form__link-button dialog__close" type="button">Annuler</button>
-            <button class="button button--brand button--large dialog__submit" type="submit">Créer la partie</button>
+            <button class="button button--brand button--large dialog__submit" type="submit">{{ game.isPatience ? 'Continuer' : 'Créer la partie' }}</button>
         </div>
     </form>
 </dialog>

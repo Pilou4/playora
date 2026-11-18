@@ -27,6 +27,10 @@ final readonly class BeloteBot
     {
         $position = $state->turn;
 
+        if (Phase::Auction === $state->phase) {
+            return $this->auction($state, $position);
+        }
+
         if ($state->phase->isBidding()) {
             $suit = $this->chooseTrump($state, $position);
 
@@ -65,6 +69,193 @@ final readonly class BeloteBot
         }
 
         return $best;
+    }
+
+    // ---------- Enchères de coinche et contrée ----------
+
+    /** Ce que le partenaire apporte en moyenne, ajouté à l'estimation de sa propre main (réglé par simulation). */
+    public const int PARTNER_SHARE = 40;
+
+    private function auction(BeloteState $state, int $position): ActionResult
+    {
+        $hand = $state->hand($position);
+        $taker = $state->taker;
+        $contract = $state->contract;
+        $ourContract = null !== $taker && BeloteRules::team($taker) === BeloteRules::team($position);
+
+        // Contrat adverse : coincher si nos atouts et nos As le feront chuter
+        if (null !== $contract && null !== $taker && null !== $state->trump && !$ourContract && null === $state->coincher
+            && self::defenseValue($hand, $state->trump) >= 162 - $contract + 5) {
+            return $this->engine->coinche($state, $position);
+        }
+
+        // Notre contrat coinché : surcoincher seulement avec une très belle main
+        if (null !== $state->coincher && $ourContract && 2 === $state->multiplier && null !== $state->trump
+            && self::contractValue($hand, $state->trump) + self::PARTNER_SHARE >= ($contract ?? 0) + 40) {
+            return $this->engine->surcoinche($state, $position);
+        }
+
+        if (null !== $state->coincher) {
+            return $this->engine->pass($state, $position);
+        }
+
+        // Ma meilleure couleur et ce que l'équipe peut annoncer avec
+        $best = null;
+        $bestValue = 0;
+
+        foreach (Suit::cases() as $suit) {
+            $value = self::contractValue($hand, $suit);
+
+            if ($value > $bestValue) {
+                $best = $suit;
+                $bestValue = $value;
+            }
+        }
+
+        // Le partenaire a annoncé tout atout ou sans atout : on le laisse jouer
+        if ($ourContract && TrumpMode::Suit !== $state->mode) {
+            return $this->engine->pass($state, $position);
+        }
+
+        // Le partenaire a annoncé : on le soutient une fois dans sa couleur (si l'on a déjà parlé, on laisse)
+        if ($ourContract && null !== $state->trump && null !== $contract) {
+            if (isset($state->bids[$position])) {
+                return $this->engine->pass($state, $position);
+            }
+
+            $support = self::supportValue($hand, $state->trump);
+            $raise = $contract + 10 * intdiv(max(0, $support - 20), 15);
+
+            if ($raise > $contract && $raise <= CoincheScorer::MAX_CONTRACT) {
+                return $this->engine->bid($state, $position, $raise, $state->trump);
+            }
+
+            return $this->engine->pass($state, $position);
+        }
+
+        if (null === $best) {
+            return $this->engine->pass($state, $position);
+        }
+
+        $total = $bestValue + self::PARTNER_SHARE;
+        $max = $total >= 230 ? CoincheScorer::CAPOT_CONTRACT : min(CoincheScorer::MAX_CONTRACT, 10 * intdiv($total, 10));
+        $wanted = null === $contract ? $max : min($max, $contract + 10);
+
+        if ($wanted >= CoincheScorer::MIN_CONTRACT && (null === $contract || $wanted > $contract)) {
+            return $this->engine->bid($state, $position, $wanted, $best);
+        }
+
+        return $this->engine->pass($state, $position);
+    }
+
+    /**
+     * Points que ma main rapporte si cette couleur est l'atout (sans compter le partenaire).
+     *
+     * @param list<Card> $hand
+     */
+    public static function contractValue(array $hand, Suit $trump): int
+    {
+        $trumps = array_values(array_filter($hand, static fn (Card $card): bool => $card->isTrump($trump)));
+        $ranks = array_map(static fn (Card $card): Rank => $card->rank, $trumps);
+        $has = static fn (Rank $rank): bool => \in_array($rank, $ranks, true);
+        $count = \count($trumps);
+
+        if ($count < 3 && !($has(Rank::Jack) && $has(Rank::Nine))) {
+            return 0;
+        }
+
+        $value = 0;
+
+        foreach ($trumps as $card) {
+            $value += match ($card->rank) {
+                Rank::Jack => 22,
+                Rank::Nine => 15,
+                Rank::Ace => 10,
+                Rank::Ten => 7,
+                default => 4,
+            };
+        }
+
+        $value += $has(Rank::Jack) && $has(Rank::Nine) ? 10 : 0;
+        $value += max(0, $count - 3) * 10;
+        $value += $has(Rank::King) && $has(Rank::Queen) ? 15 : 0;
+
+        if (!$has(Rank::Jack)) {
+            $value -= 15;
+        }
+
+        foreach (Suit::cases() as $suit) {
+            if ($suit === $trump) {
+                continue;
+            }
+
+            $cards = array_values(array_filter($hand, static fn (Card $card): bool => $card->suit === $suit));
+            $suitRanks = array_map(static fn (Card $card): Rank => $card->rank, $cards);
+
+            if ([] === $cards) {
+                $value += $count >= 3 ? 8 : 0;
+            } elseif (1 === \count($cards) && Rank::Ace !== $cards[0]->rank) {
+                $value += $count >= 4 ? 4 : 0;
+            }
+
+            if (\in_array(Rank::Ace, $suitRanks, true)) {
+                $value += \in_array(Rank::Ten, $suitRanks, true) ? 20 : 11;
+            } elseif (\in_array(Rank::Ten, $suitRanks, true) && \count($cards) >= 2) {
+                $value += 4;
+            }
+        }
+
+        return max(0, $value);
+    }
+
+    /**
+     * Soutien au contrat du partenaire dans sa couleur : atouts et As.
+     *
+     * @param list<Card> $hand
+     */
+    private static function supportValue(array $hand, Suit $trump): int
+    {
+        $value = 0;
+
+        foreach ($hand as $card) {
+            $value += match (true) {
+                $card->isTrump($trump) && Rank::Jack === $card->rank => 20,
+                $card->isTrump($trump) && Rank::Nine === $card->rank => 14,
+                $card->isTrump($trump) => 5,
+                Rank::Ace === $card->rank => 11,
+                default => 0,
+            };
+        }
+
+        return $value;
+    }
+
+    /**
+     * Points que ma main peut prendre en défense contre cet atout (pour coincher).
+     *
+     * @param list<Card> $hand
+     */
+    private static function defenseValue(array $hand, Suit $trump): int
+    {
+        $trumps = array_values(array_filter($hand, static fn (Card $card): bool => $card->isTrump($trump)));
+        $ranks = array_map(static fn (Card $card): Rank => $card->rank, $trumps);
+        $value = 0;
+
+        if (\in_array(Rank::Jack, $ranks, true)) {
+            $value += 25;
+        }
+
+        if (\in_array(Rank::Nine, $ranks, true) && \count($trumps) >= 2) {
+            $value += 20;
+        }
+
+        foreach ($hand as $card) {
+            if (!$card->isTrump($trump) && Rank::Ace === $card->rank) {
+                $value += 15;
+            }
+        }
+
+        return $value + max(0, \count($trumps) - 2) * 6;
     }
 
     /**
@@ -133,6 +324,10 @@ final readonly class BeloteBot
             return $legal[0];
         }
 
+        if (TrumpMode::Suit !== $state->mode) {
+            return self::modeCard($state, $position, $legal);
+        }
+
         $memory = BeloteMemory::of($state, $position);
 
         return [] === $state->trick
@@ -158,10 +353,18 @@ final readonly class BeloteBot
 
         // Notre équipe a pris : on fait tomber les atouts d'en face. Avec le Valet (ou l'atout maître), on le joue tout de suite ;
         // sinon un petit atout, pour faire sortir les gros. En défense, on n'entame jamais à l'atout.
+        // On garde toujours son dernier atout pour couper, sauf s'il est maître et fait tomber le tout dernier atout caché.
         if ($ourContract && [] !== $trumps && $opponentsHaveTrumps) {
             $masters = array_values(array_filter($trumps, $memory->isMaster(...)));
+            $last = 1 === \count($trumps);
 
-            return [] !== $masters ? self::strongest($masters, $trump) : self::weakest($trumps, $trump);
+            if ([] !== $masters && (!$last || \count($memory->unseen($trump)) <= 1)) {
+                return self::strongest($masters, $trump);
+            }
+
+            if ([] === $masters && !$last) {
+                return self::weakest($trumps, $trump);
+            }
         }
 
         // Cartes maîtres hors atout, que personne en face ne peut couper
@@ -212,13 +415,13 @@ final readonly class BeloteBot
         // Le partenaire tient le pli
         if (BeloteRules::team($winner) === BeloteRules::team($position)) {
             if (!$memory->canBeBeaten($winningCard, $led, $opponentsAfter)) {
-                return self::give($legal, $memory);
+                return self::give($legal, $memory, $position);
             }
 
             // Pli fragile : le reprendre à coup sûr si c'est possible, sinon ne rien y mettre
             $sure = array_values(array_filter($legal, fn (Card $card): bool => $wins($card) && $safe($card)));
 
-            return [] !== $sure ? self::cheapest($sure, $memory) : self::cheapest($legal, $memory);
+            return [] !== $sure ? self::richestEquivalent(self::cheapest($sure, $memory), $legal, $memory) : self::cheapest($legal, $memory);
         }
 
         $winners = array_values(array_filter($legal, $wins));
@@ -230,7 +433,7 @@ final readonly class BeloteBot
         $sure = array_values(array_filter($winners, $safe));
 
         if ([] !== $sure) {
-            return self::cheapest($sure, $memory);
+            return self::richestEquivalent(self::cheapest($sure, $memory), $legal, $memory);
         }
 
         // Personne ne peut garantir le pli : on tente avec la plus forte s'il vaut le coup
@@ -250,14 +453,42 @@ final readonly class BeloteBot
 
     /**
      * Charger le pli du partenaire : le plus de points possible, sans y mettre d'atout.
+     * Un as ne se donne que si sa couleur est coupée par un adversaire (il ne ferait plus de pli)
+     * ou si l'on garde derrière le 10 et le roi de la couleur.
      *
      * @param non-empty-list<Card> $cards
      */
-    private static function give(array $cards, BeloteMemory $memory): Card
+    private static function give(array $cards, BeloteMemory $memory, int $position): Card
     {
-        $plain = array_values(array_filter($cards, static fn (Card $card): bool => !$card->isTrump($memory->trump)));
+        $trump = $memory->trump;
+        $plain = array_values(array_filter($cards, static fn (Card $card): bool => !$card->isTrump($trump)));
 
-        return [] !== $plain ? self::mostPoints($plain, $memory->trump) : self::cheapest($cards, $memory);
+        if ([] === $plain) {
+            return self::cheapest($cards, $memory);
+        }
+
+        $opponents = [($position + 1) % 4, ($position + 3) % 4];
+        $hand = array_map(static fn (Card $card): string => $card->code(), $cards);
+        $canGive = static function (Card $card) use ($opponents, $memory, $hand): bool {
+            if (Rank::Ace !== $card->rank) {
+                return true;
+            }
+
+            foreach ($opponents as $player) {
+                if ($memory->isVoid($player, $card->suit)) {
+                    return true;
+                }
+            }
+
+            $ten = (new Card($card->suit, Rank::Ten))->code();
+            $king = (new Card($card->suit, Rank::King))->code();
+
+            return \in_array($ten, $hand, true) && \in_array($king, $hand, true);
+        };
+
+        $given = array_values(array_filter($plain, $canGive));
+
+        return [] !== $given ? self::mostPoints($given, $trump) : self::cheapest($plain, $memory);
     }
 
     /**
@@ -289,6 +520,38 @@ final readonly class BeloteBot
         usort($cards, static fn (Card $a, Card $b): int => $cost($a) <=> $cost($b));
 
         return $cards[0];
+    }
+
+    /**
+     * Le pli est gagné à coup sûr avec $chosen : si l'on tient une carte plus forte de la même couleur qui lui est
+     * « équivalente » (aucune carte cachée entre les deux, comme l'As et le 10 quand on a les deux), on joue celle qui
+     * rapporte le plus. Exemple : avec As et 10 de pique, on prend avec l'As ; le 10 devient maître et on ne donne
+     * pas un point de plus si la couleur est coupée ensuite.
+     *
+     * @param non-empty-list<Card> $cards cartes jouables
+     */
+    private static function richestEquivalent(Card $chosen, array $cards, BeloteMemory $memory): Card
+    {
+        $trump = $memory->trump;
+        $hidden = $memory->unseen($chosen->suit);
+        $best = $chosen;
+
+        foreach (self::ofSuit($cards, $chosen->suit) as $card) {
+            $low = $chosen->strength($trump);
+            $high = $card->strength($trump);
+
+            if ($high <= $low || $card->points($trump) <= $best->points($trump)) {
+                continue;
+            }
+
+            $between = array_filter($hidden, static fn (Card $other): bool => $other->strength($trump) > $low && $other->strength($trump) < $high);
+
+            if ([] === $between) {
+                $best = $card;
+            }
+        }
+
+        return $best;
     }
 
     /**
@@ -343,5 +606,42 @@ final readonly class BeloteBot
         }
 
         throw new BeloteException('Carte introuvable dans le pli.');
+    }
+
+    /**
+     * Tout atout ou sans atout (coinche) : jeu simple. On entame avec sa carte la plus forte ;
+     * on prend le pli au plus juste si un adversaire le tient, on charge si le partenaire le tient
+     * et que l'on joue en dernier, sinon on se défausse de sa plus petite carte.
+     *
+     * @param non-empty-list<Card> $legal
+     */
+    private static function modeCard(BeloteState $state, int $position, array $legal): Card
+    {
+        $mode = $state->mode;
+        $strength = static fn (Card $card): int => ModeRules::strength($card, $mode) * 100 + ModeRules::points($card, $mode);
+        $points = static fn (Card $card): int => ModeRules::points($card, $mode) * 100 + ModeRules::strength($card, $mode);
+        $sorted = static function (array $cards, \Closure $key): array {
+            usort($cards, static fn (Card $a, Card $b): int => $key($a) <=> $key($b));
+
+            return $cards;
+        };
+
+        if ([] === $state->trick) {
+            return $sorted($legal, $strength)[\count($legal) - 1];
+        }
+
+        $winner = ModeRules::winner($state->trick, $mode);
+
+        if (BeloteRules::team($winner) === BeloteRules::team($position)) {
+            $cheap = $sorted($legal, $points);
+
+            return 3 === \count($state->trick) ? $cheap[\count($cheap) - 1] : $cheap[0];
+        }
+
+        $winning = array_values(array_filter($legal, static function (Card $card) use ($state, $position, $mode): bool {
+            return ModeRules::winner([...$state->trick, new TrickCard($position, $card)], $mode) === $position;
+        }));
+
+        return [] !== $winning ? $sorted($winning, $strength)[0] : $sorted($legal, $points)[0];
     }
 }

@@ -3,7 +3,7 @@
 {% block title %}{{ game.label }} en ligne : salons en attente | Playora{% endblock %}
 
 {% block metaTag %}
-    <meta name="description" content="Rejoignez une table de {{ game.label|lower }} ou créez votre salon : {{ game.playerCount }} joueurs, 2 équipes tirées au sort, en ligne et gratuit.">
+    <meta name="description" content="Rejoignez une table de {{ game.label|lower }} ou créez votre salon. {{ game.summary }}. En ligne et gratuit.">
 {% endblock %}
 
 {% block og_title %}{{ game.label }} en ligne : salons en attente | Playora{% endblock %}
@@ -22,16 +22,22 @@
           data-hub-url="{{ mercure(topic) }}"
           data-csrf="{{ csrf_token('submit') }}"
           data-login-url="{{ path('app_login') }}"
-          data-connected="{{ app.user ? '1' : '0' }}">
+          data-connected="{{ app.user ? '1' : '0' }}"
+          data-game="{{ game.value }}"
+          data-announcements="{{ game.hasAnnouncements ? '1' : '0' }}"
+          data-prepare-url="{{ game.isPatience ? path('app_game_prepare', {game: game.value}) : '' }}"
+          data-prepare-join-url="{{ game.isPatience ? path('app_game_prepare_join', {game: game.value, id: 0}) : '' }}"
+          data-rounds-chip="{{ game.isPatience or game.playsInRounds ? '0' : '1' }}">
         <section class="lobby__band" aria-labelledby="salons-titre">
             <nav class="lobby__breadcrumb" aria-label="Fil d’Ariane">
                 <ol class="lobby__breadcrumb-list">
                     <li class="lobby__breadcrumb-item"><a class="lobby__breadcrumb-link" href="{{ path('app_home') }}">Accueil</a></li>
+                    <li class="lobby__breadcrumb-item"><a class="lobby__breadcrumb-link" href="{{ path('app_games') }}">Jeux</a></li>
                     <li class="lobby__breadcrumb-item" aria-current="page">{{ game.label }}</li>
                 </ol>
             </nav>
             <h1 id="salons-titre" class="lobby__title">{{ game.label }}</h1>
-            <p class="lobby__lead">{{ game.playerCount }} joueurs, 2 équipes tirées au sort au début de la partie</p>
+            <p class="lobby__lead">{{ game.summary }}</p>
             <div class="lobby__cards" aria-hidden="true">
                 <img class="lobby__card lobby__card--left" src="{{ asset(cards ~ 'carreau/valet.svg') }}" width="250" height="350" alt="">
                 <img class="lobby__card lobby__card--middle" src="{{ asset(cards ~ 'coeur/roi.svg') }}" width="250" height="350" alt="">
@@ -43,10 +49,14 @@
             <div class="lobby__bar">
                 <div class="tabs" role="tablist" aria-label="Afficher">
                     <button class="tabs__tab tabs__tab--active" type="button" role="tab" aria-selected="true" aria-controls="salons-liste" data-filter="all">Tous <span class="tabs__count"></span></button>
-                    {% for points in game.targetPointsChoices %}
-                        <button class="tabs__tab" type="button" role="tab" aria-selected="false" aria-controls="salons-liste" data-filter="{{ points }}">{{ points }} pts <span class="tabs__count"></span></button>
-                    {% endfor %}
-                    <button class="tabs__tab" type="button" role="tab" aria-selected="false" aria-controls="salons-liste" data-filter="sans-annonces">Sans annonces <span class="tabs__count"></span></button>
+                    {% if game.targetPointsChoices|length > 1 %}
+                        {% for points in game.targetPointsChoices %}
+                            <button class="tabs__tab" type="button" role="tab" aria-selected="false" aria-controls="salons-liste" data-filter="{{ points }}">{{ game.targetLabel(points) }} <span class="tabs__count"></span></button>
+                        {% endfor %}
+                    {% endif %}
+                    {% if game.hasAnnouncements %}
+                        <button class="tabs__tab" type="button" role="tab" aria-selected="false" aria-controls="salons-liste" data-filter="sans-annonces">Sans annonces <span class="tabs__count"></span></button>
+                    {% endif %}
                     <span class="tabs__separator" aria-hidden="true"></span>
                     <button class="tabs__tab" type="button" role="tab" aria-selected="false" aria-controls="regles" data-filter="regles">Règles du jeu</button>
                 </div>
@@ -59,7 +69,25 @@
                 <p class="lobby__empty lobby__empty--rooms" hidden>Aucune partie en attente pour le moment. Créez la vôtre : les joueurs la verront tout de suite.</p>
             </div>
 
-            {{ include('game/_rules_belote.html.twig') }}
+            {% if game.isTarot %}
+                {{ include('game/_rules_tarot.html.twig') }}
+            {% elseif game.isSolitaire %}
+                {{ include('game/_rules_solitaire.html.twig', {draw: game.solitaireDraw}) }}
+            {% elseif game.isRami %}
+                {{ include('game/_rules_rami.html.twig') }}
+            {% elseif game.isHuit %}
+                {{ include('game/_rules_huit.html.twig') }}
+            {% elseif game.isGolf %}
+                {{ include('game/_rules_golf.html.twig') }}
+            {% elseif game.isPresident %}
+                {{ include('game/_rules_president.html.twig') }}
+            {% elseif game.isSpider %}
+                {{ include('game/_rules_spider.html.twig', {level: game.spiderLevel}) }}
+            {% elseif game.isCardPatience %}
+                {{ include('game/_rules_patience.html.twig', {game: game}) }}
+            {% else %}
+                {{ include('game/_rules_belote.html.twig', {variant: game.variant}) }}
+            {% endif %}
         </section>
 
         {# Modèle d'un salon : copié par assets/js/games/Lobby.js pour chaque salon reçu de l'API #}

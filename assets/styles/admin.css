@@ -1,0 +1,1101 @@
+/*
+ * Administration, style E « salon de jeu » : fond bois, menu sur bois foncé, contenu sur une feuille de papier.
+ * Importé par assets/admin.js, seulement sur les pages /admin.
+ */
+
+/* ---------- Mise en page ---------- */
+
+/* La page admin occupe toute la hauteur sous l'en-tête : le menu de gauche descend toujours jusqu'en bas */
+body:has(.admin) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+}
+
+.admin {
+    --admin-wood: linear-gradient(160deg, #6b3a1f, #4a2614);
+    --admin-paper: #fbf1df;
+    --admin-paper-dark: #f1e3cb;
+    --admin-ink: #3b2414;
+    --admin-muted: #7a5a3e;
+    --admin-line: #e6d2b3;
+    --admin-red: #c0392b;
+    --admin-red-button: linear-gradient(#d9443a, #a8261d);
+    --admin-red-edge: #6d140e;
+
+    display: grid;
+    flex: 1 0 auto;
+    grid-template-columns: 250px 1fr;
+    grid-template-rows: 0 1fr;
+    background: var(--admin-wood);
+    color: var(--admin-ink);
+}
+
+/* Menu pleine hauteur, sur bois foncé */
+.admin__nav {
+    border-right: 1px solid rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+/* Le contenu du menu reste à l'écran et défile seul, sans faire défiler la page */
+.admin__nav-scroll {
+    position: sticky;
+    top: 0;
+    max-height: 100svh;
+    overflow-y: auto;
+    padding: 26px 12px;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+    scrollbar-width: thin;
+}
+
+.admin__nav-title {
+    margin: 0;
+    padding: 4px 16px 14px;
+    color: #ffd9a8;
+    font: 800 20px var(--font-display);
+}
+
+.admin__nav-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin__nav-game {
+    margin: 14px 8px 0;
+    padding: 14px 8px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.admin__nav-game-name {
+    display: block;
+    padding: 0 8px 4px;
+    color: #fff3e0;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.admin__link {
+    position: relative;
+    display: block;
+    margin: 3px 0;
+    padding: 11px 16px;
+    border-radius: 10px;
+    color: #fff3e0;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.admin__link--sub {
+    padding: 9px 16px 9px 26px;
+    color: #e9c9a4;
+    font-size: 14px;
+}
+
+.admin__link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.admin__link--active,
+.admin__link--active:hover {
+    background: var(--admin-paper);
+    color: #7a2318;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.admin__link:focus-visible {
+    outline: 3px solid var(--brand-yellow);
+    outline-offset: 2px;
+}
+
+/* Changement de page sans rechargement (AdminNavigation.js) : la feuille pâlit pendant le chargement, puis la nouvelle apparaît en fondu */
+.admin__sheet {
+    transition: opacity var(--transition-fast);
+}
+
+.admin__sheet--loading {
+    opacity: 0.55;
+}
+
+.admin__sheet--entering {
+    animation: admin-sheet-in 0.22s ease-out;
+}
+
+@keyframes admin-sheet-in {
+    from { opacity: 0.55; }
+    to { opacity: 1; }
+}
+
+/* Contenu : une feuille de papier posée sur le bois */
+.admin__main {
+    min-width: 0;
+    padding: 30px;
+}
+
+.admin__sheet {
+    padding: 26px 30px 30px;
+    border-radius: 18px;
+    background: var(--admin-paper);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.admin__breadcrumb {
+    margin: 0 0 4px;
+    color: var(--admin-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin__back {
+    color: inherit;
+}
+
+.admin__title {
+    margin: 0 0 6px;
+    color: var(--admin-red);
+    font: 800 34px/1.15 var(--font-display);
+}
+
+.admin__subtitle {
+    margin: 0 0 14px;
+    color: var(--admin-ink);
+    font: 800 22px var(--font-display);
+}
+
+.admin__lead {
+    margin: 0 0 20px;
+    color: var(--admin-muted);
+}
+
+/* Messages : bandeau du bord du menu de gauche jusqu'au bord droit, juste sous la nav du site.
+   Rangée de hauteur nulle : le bandeau est posé par-dessus (rien ne bouge) et reste en haut quand on fait défiler. */
+.admin-flash {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    grid-column: 2 / -1;
+    grid-row: 1;
+    height: 0;
+}
+
+.admin__nav,
+.admin__main {
+    grid-row: 2;
+}
+
+.admin-flash__message {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0;
+    padding: 14px 30px;
+    overflow: hidden;
+    background: linear-gradient(90deg, #2f7d32, #3f9a43);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(30, 12, 2, 0.35);
+    animation: admin-flash-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.admin-flash__message--error {
+    background: linear-gradient(90deg, #a8261d, #c63a2c);
+}
+
+/* Le temps d'affichage restant : une fine barre claire qui se vide */
+.admin-flash__message::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.55);
+    transform-origin: left center;
+    animation: admin-flash-time 4s linear forwards;
+}
+
+.admin-flash__icon {
+    flex: none;
+    width: 22px;
+    height: 22px;
+}
+
+.admin-flash__text {
+    flex: 1;
+}
+
+.admin-flash__close {
+    position: relative;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.admin-flash__close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.admin-flash__close:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+}
+
+/* La croix du bouton fermer */
+.admin-flash__close::before,
+.admin-flash__close::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 2px;
+    margin: -1px 0 0 -7px;
+    border-radius: 2px;
+    background: #fff;
+    transform: rotate(45deg);
+}
+
+.admin-flash__close::after {
+    transform: rotate(-45deg);
+}
+
+.admin-flash__message--leaving {
+    animation: admin-flash-out 0.3s ease forwards;
+}
+
+@keyframes admin-flash-in {
+    from { opacity: 0; transform: translateY(-100%); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes admin-flash-out {
+    to { opacity: 0; transform: translateY(-100%); }
+}
+
+@keyframes admin-flash-time {
+    to { transform: scaleX(0); }
+}
+
+
+
+/* Boutons du papier */
+.admin__button {
+    display: inline-block;
+    padding: 12px 28px;
+    border: 2px solid #f0b86b;
+    border-radius: 12px;
+    background: var(--admin-red-button);
+    color: #fff;
+    font: 800 15px var(--font-body);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 0 var(--admin-red-edge);
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.admin__button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 var(--admin-red-edge);
+}
+
+.admin__button--plain {
+    border-color: transparent;
+    background: none;
+    color: var(--admin-muted);
+    box-shadow: none;
+    text-decoration: none;
+}
+
+.admin__button:focus-visible {
+    outline: 3px solid var(--admin-ink);
+    outline-offset: 2px;
+}
+
+/* ---------- Réglages ---------- */
+
+/* En-tête d'une page de réglages : le titre à gauche, l'état du jeu et son bouton à droite */
+.admin-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 24px;
+}
+
+/* Jeu en ligne / hors ligne : une pastille d'état (voyant vert ou gris) et le bouton qui le change */
+.admin-active {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0 20px;
+}
+
+.admin-active__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 9px 16px;
+    border-radius: 99px;
+    background: #dcf3e0;
+    color: #14532d;
+    font: 800 15px var(--font-display);
+    white-space: nowrap;
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.admin-active--off .admin-active__chip {
+    background: #ece4da;
+    color: var(--admin-muted);
+}
+
+.admin-active__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #22a447;
+    box-shadow: 0 0 0 4px rgba(34, 164, 71, 0.18);
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.admin-active--off .admin-active__dot {
+    background: #a8998a;
+    box-shadow: none;
+}
+
+.admin-active__button {
+    min-width: 172px;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(#3b2414, #24150b);
+    color: #fbf1df;
+    font: 700 14px var(--font-body);
+    white-space: nowrap;
+    box-shadow: 0 3px 0 #120a05;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s ease;
+}
+
+.admin-active--off .admin-active__button {
+    background: linear-gradient(#2fb455, #1e8a3d);
+    color: #fff;
+    box-shadow: 0 3px 0 #145c29;
+}
+
+.admin-active__button:hover {
+    filter: brightness(1.08);
+}
+
+.admin-active__button:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #120a05;
+}
+
+.admin-active__button:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.admin-active__button:focus-visible {
+    outline: 3px solid var(--admin-ink);
+    outline-offset: 3px;
+}
+
+.admin-settings__preview,
+.admin-settings__group {
+    margin: 0;
+    padding: 22px 0;
+    border: 0;
+}
+
+.admin-settings__preview {
+    padding-top: 6px;
+}
+
+.admin-settings__preview .admin-settings__label {
+    margin: 0 0 12px;
+}
+
+.admin-settings__group {
+    border-top: 2px dashed var(--admin-line);
+}
+
+.admin-settings__label {
+    padding: 0;
+    color: var(--admin-ink);
+    font: 800 19px var(--font-display);
+}
+
+/* La légende flotte : elle reste dans le cadre au lieu de chevaucher la bordure du fieldset */
+.admin-settings__group > .admin-settings__label {
+    float: left;
+    width: 100%;
+}
+
+.admin-settings__help {
+    clear: both;
+    margin: 2px 0 14px;
+    color: var(--admin-muted);
+    font-size: 14px;
+}
+
+.admin-settings__choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.admin-settings__actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    padding-top: 22px;
+    border-top: 2px dashed var(--admin-line);
+}
+
+/* Un choix dessiné (tapis, cartes) : le bouton radio est caché, le visuel le remplace */
+.admin-choice {
+    position: relative;
+    width: 220px;
+    padding: 8px;
+    border: 3px solid transparent;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.admin-choice:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.admin-choice:has(.admin-choice__input:checked) {
+    border-color: var(--admin-red);
+    background: #fff;
+    box-shadow: 0 6px 14px rgba(90, 40, 10, 0.18);
+}
+
+.admin-choice:has(.admin-choice__input:focus-visible) {
+    outline: 3px solid var(--admin-ink);
+    outline-offset: 2px;
+}
+
+.admin-choice__visual {
+    display: block;
+}
+
+.admin-choice__visual--cards {
+    position: relative;
+    height: 110px;
+    border-radius: 12px;
+    background: var(--admin-paper-dark);
+}
+
+.admin-choice__card {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    width: 44px;
+    max-width: none;
+    height: auto;
+    margin-left: -22px;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transform-origin: 50% 120%;
+}
+
+.admin-choice__card:nth-child(1) { transform: translateX(-50px) rotate(-18deg); }
+.admin-choice__card:nth-child(2) { transform: translateX(-25px) rotate(-9deg); }
+.admin-choice__card:nth-child(4) { transform: translateX(25px) rotate(9deg); }
+.admin-choice__card:nth-child(5) { transform: translateX(50px) rotate(18deg); }
+
+/* Dos des cartes : trois dos en petit éventail */
+.admin-choice__visual--back .admin-choice__card:nth-child(1) { transform: translateX(-28px) rotate(-12deg); }
+.admin-choice__visual--back .admin-choice__card:nth-child(2) { transform: none; }
+.admin-choice__visual--back .admin-choice__card:nth-child(3) { transform: translateX(28px) rotate(12deg); }
+
+.admin-choice__name {
+    display: block;
+    margin-top: 8px;
+    color: var(--admin-ink);
+    font-size: 14px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.admin-choice:has(.admin-choice__input:checked) .admin-choice__name {
+    color: var(--admin-red);
+}
+
+/* Durée d'un tour : boutons en relief */
+.admin-segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-segmented__label {
+    display: block;
+    padding: 9px 18px;
+    border-radius: 10px;
+    background: #efe0c6;
+    color: var(--admin-muted);
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.admin-segmented__label:hover {
+    background: #e8d4b2;
+}
+
+.admin-segmented__input:checked + .admin-segmented__label {
+    background: var(--admin-red-button);
+    color: #fff;
+    box-shadow: 0 3px 0 var(--admin-red-edge);
+}
+
+.admin-segmented__input:focus-visible + .admin-segmented__label {
+    outline: 3px solid var(--admin-ink);
+    outline-offset: 2px;
+}
+
+/* ---------- Aperçu d'une table (mêmes tapis que la partie) ---------- */
+
+.admin-preview {
+    --felt: radial-gradient(90% 90% at 50% 40%, #2aa3a0, #17807f 55%, #0f5f60);
+    --felt-edge: #0f5f60;
+    --stitch: rgba(191, 240, 236, 0.5);
+
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 18px;
+    background: var(--felt);
+    box-shadow: inset 0 0 0 6px var(--felt-edge);
+}
+
+.admin-preview--vert {
+    --felt: radial-gradient(90% 90% at 50% 40%, #2a8a5c, #186b45 55%, #0e4a2f);
+    --felt-edge: #0e4a2f;
+    --stitch: rgba(201, 230, 205, 0.45);
+}
+
+.admin-preview--nuit {
+    --felt: radial-gradient(90% 90% at 50% 40%, #2c4170, #1d2c52 55%, #131d38);
+    --felt-edge: #131d38;
+    --stitch: rgba(180, 196, 240, 0.45);
+}
+
+/* Grande table : mêmes proportions que la partie (16/10), centrée ; tout est en cqw pour suivre sa largeur */
+.admin-preview--main {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    aspect-ratio: 16 / 10;
+    container-type: inline-size;
+}
+
+.admin-preview--mini {
+    height: 120px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 4px var(--felt-edge);
+}
+
+.admin-preview__mat {
+    position: absolute;
+    inset: 18% 22% 30%;
+    border: 2px dashed var(--stitch);
+    border-radius: 14px;
+}
+
+.admin-preview--mini .admin-preview__mat {
+    inset: 16% 14%;
+    border-radius: 8px;
+}
+
+.admin-preview__card {
+    position: absolute;
+    max-width: none;
+    height: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.admin-preview__trick {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+}
+
+.admin-preview--mini .admin-preview__trick {
+    top: 50%;
+}
+
+/* Le pli au centre */
+.admin-preview__card--trick {
+    width: 8.4cqw;
+    margin: -5.9cqw 0 0 -4.2cqw;
+    border-radius: 0.6cqw;
+}
+
+.admin-preview__card--trick:nth-child(1) { transform: translate(-4.2cqw, -0.8cqw) rotate(-6deg); }
+.admin-preview__card--trick:nth-child(2) { transform: translate(4.2cqw, -2cqw) rotate(8deg); }
+.admin-preview__card--trick:nth-child(3) { transform: translate(0, 3.2cqw) rotate(-2deg); }
+
+/* Petits tapis (choix) : tailles fixes */
+.admin-preview--mini .admin-preview__card {
+    width: 34px;
+    margin: -24px 0 0 -17px;
+    border-radius: 3px;
+}
+
+.admin-preview--mini .admin-preview__card--trick:nth-child(1) { transform: translate(-12px, 0) rotate(-8deg); }
+.admin-preview--mini .admin-preview__card--trick:nth-child(2) { transform: translate(12px, 0) rotate(6deg); }
+
+/* Ma main en éventail, en bas */
+.admin-preview__hand {
+    position: absolute;
+    bottom: -4.4cqw;
+    left: 50%;
+}
+
+.admin-preview__card--hand {
+    bottom: 0;
+    width: 10.6cqw;
+    margin-left: -5.3cqw;
+    border-radius: 0.8cqw;
+    transform-origin: 50% 130%;
+}
+
+.admin-preview__card--hand:nth-child(1) { transform: translateX(-20.3cqw) rotate(-21deg); }
+.admin-preview__card--hand:nth-child(2) { transform: translateX(-14.5cqw) rotate(-15deg); }
+.admin-preview__card--hand:nth-child(3) { transform: translateX(-8.7cqw) rotate(-9deg); }
+.admin-preview__card--hand:nth-child(4) { transform: translateX(-2.9cqw) rotate(-3deg); }
+.admin-preview__card--hand:nth-child(5) { transform: translateX(2.9cqw) rotate(3deg); }
+.admin-preview__card--hand:nth-child(6) { transform: translateX(8.7cqw) rotate(9deg); }
+.admin-preview__card--hand:nth-child(7) { transform: translateX(14.5cqw) rotate(15deg); }
+.admin-preview__card--hand:nth-child(8) { transform: translateX(20.3cqw) rotate(21deg); }
+
+/* Les cartes cachées des trois autres joueurs */
+.admin-preview__backs {
+    position: absolute;
+}
+
+.admin-preview__card--back {
+    top: 0;
+    width: 6.4cqw;
+    border-radius: 0.5cqw;
+}
+
+.admin-preview__backs--top {
+    top: -5cqw;
+    left: 50%;
+}
+
+.admin-preview__backs--top .admin-preview__card--back {
+    margin-left: -3.2cqw;
+}
+
+.admin-preview__backs--left,
+.admin-preview__backs--right {
+    top: 38%;
+}
+
+.admin-preview__backs--left {
+    left: -1cqw;
+}
+
+.admin-preview__backs--right {
+    right: -1cqw;
+}
+
+.admin-preview__backs--left .admin-preview__card--back {
+    left: 0;
+}
+
+.admin-preview__backs--right .admin-preview__card--back {
+    right: 0;
+}
+
+.admin-preview__backs--top .admin-preview__card--back:nth-child(1) { transform: translateX(-3.6cqw); }
+.admin-preview__backs--top .admin-preview__card--back:nth-child(2) { transform: translateX(-1.8cqw); }
+.admin-preview__backs--top .admin-preview__card--back:nth-child(4) { transform: translateX(1.8cqw); }
+.admin-preview__backs--top .admin-preview__card--back:nth-child(5) { transform: translateX(3.6cqw); }
+
+.admin-preview__backs--left .admin-preview__card--back:nth-child(1),
+.admin-preview__backs--right .admin-preview__card--back:nth-child(1) { transform: translateY(-3.6cqw) rotate(90deg); }
+.admin-preview__backs--left .admin-preview__card--back:nth-child(2),
+.admin-preview__backs--right .admin-preview__card--back:nth-child(2) { transform: translateY(-1.8cqw) rotate(90deg); }
+.admin-preview__backs--left .admin-preview__card--back:nth-child(3),
+.admin-preview__backs--right .admin-preview__card--back:nth-child(3) { transform: rotate(90deg); }
+.admin-preview__backs--left .admin-preview__card--back:nth-child(4),
+.admin-preview__backs--right .admin-preview__card--back:nth-child(4) { transform: translateY(1.8cqw) rotate(90deg); }
+.admin-preview__backs--left .admin-preview__card--back:nth-child(5),
+.admin-preview__backs--right .admin-preview__card--back:nth-child(5) { transform: translateY(3.6cqw) rotate(90deg); }
+
+/* ---------- Statistiques ---------- */
+
+.admin-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin: 20px 0 30px;
+}
+
+.admin-stats__grid--small {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.admin-stats__item {
+    padding: 14px 16px;
+    border: 1px solid var(--admin-line);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.admin-stats__label {
+    color: var(--admin-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-stats__value {
+    margin: 4px 0 0;
+    color: var(--admin-ink);
+    font: 800 26px var(--font-display);
+}
+
+.admin-games {
+    padding-top: 22px;
+    border-top: 2px dashed var(--admin-line);
+}
+
+.admin-games + .admin-games {
+    margin-top: 26px;
+}
+
+.admin-games__empty {
+    margin: 0;
+    color: var(--admin-muted);
+}
+
+.admin-games__scroll {
+    overflow-x: auto;
+    border: 1px solid var(--admin-line);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.admin-games__scroll:focus-visible {
+    outline: 3px solid var(--admin-ink);
+    outline-offset: 2px;
+}
+
+.admin-games__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.admin-games__table th,
+.admin-games__table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0e3cc;
+    text-align: left;
+}
+
+.admin-games__table th {
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.admin-games__table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-games__score {
+    font-weight: 800;
+}
+
+.admin-games__target {
+    color: var(--admin-muted);
+    font-weight: 400;
+}
+
+/* Titres de colonnes triables : lien (liste des parties, tri en base) ou bouton (détail, tri dans la page) */
+.admin-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.admin-sort:hover {
+    color: var(--admin-red);
+}
+
+.admin-sort:focus-visible {
+    outline: 3px solid var(--admin-ink);
+    outline-offset: 2px;
+}
+
+/* Flèche : deux petits triangles ; le sens actif est plein, l'autre disparaît */
+.admin-sort__arrow {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-sort__arrow::before,
+.admin-sort__arrow::after {
+    content: "";
+    border-right: 4px solid transparent;
+    border-left: 4px solid transparent;
+    opacity: 0.35;
+}
+
+.admin-sort__arrow::before {
+    border-bottom: 5px solid currentColor;
+}
+
+.admin-sort__arrow::after {
+    border-top: 5px solid currentColor;
+}
+
+.admin-sort--asc,
+.admin-sort--desc {
+    color: var(--admin-red);
+}
+
+.admin-sort--asc .admin-sort__arrow::before,
+.admin-sort--desc .admin-sort__arrow::after {
+    opacity: 1;
+}
+
+.admin-sort--asc .admin-sort__arrow::after,
+.admin-sort--desc .admin-sort__arrow::before {
+    opacity: 0;
+}
+
+.admin-games__link {
+    color: var(--admin-red);
+    font-weight: 800;
+}
+
+.admin-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--admin-paper-dark);
+    color: var(--admin-ink);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-badge--playing,
+.admin-badge--reussi {
+    background: #e8f3dc;
+    color: #335a19;
+}
+
+.admin-badge--chute,
+.admin-badge--inactive {
+    background: #fde3dd;
+    color: #9c2318;
+}
+
+.admin-badge--litige {
+    background: #fff1cc;
+    color: #7a4f00;
+}
+
+/* « inactif » à côté du nom d'un jeu mis inactif, dans le menu (après .admin-badge : il en reprend la forme, en plus petit) */
+.admin__nav-badge {
+    margin-left: 6px;
+    padding: 1px 8px;
+    font-size: 11px;
+    vertical-align: 1px;
+}
+
+.admin__nav-badge--hidden {
+    display: none;
+}
+
+.admin-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.admin-pager__link {
+    color: var(--admin-red);
+    font-weight: 800;
+}
+
+.admin-pager__current {
+    color: var(--admin-muted);
+}
+
+/* ---------- Tablette et téléphone : le menu passe en bandeau horizontal ---------- */
+
+@media (max-width: 960px) {
+    .admin {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: 0 auto 1fr;
+    }
+
+    .admin__main {
+        grid-row: 3;
+    }
+
+    .admin-flash {
+        grid-column: 1 / -1;
+    }
+
+    .admin-flash__message {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .admin__nav {
+        min-width: 0;
+        border-right: 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+    }
+
+    /* Bandeau horizontal : il défile de côté, la page défile normalement */
+    .admin__nav-scroll {
+        position: static;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 8px 12px;
+    }
+
+    .admin__nav-title {
+        display: none;
+    }
+
+    .admin__nav-list {
+        display: flex;
+        gap: 4px;
+    }
+
+    .admin__nav-game {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0 0 0 6px;
+        padding: 0 0 0 10px;
+        border-top: 0;
+        border-left: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .admin__nav-game-name {
+        padding: 0 6px;
+        white-space: nowrap;
+    }
+
+    .admin__link,
+    .admin__link--sub {
+        margin: 0;
+        padding: 8px 14px;
+        white-space: nowrap;
+    }
+
+    .admin__main {
+        padding: 12px;
+    }
+
+    .admin__sheet {
+        padding: 20px 16px 24px;
+    }
+
+    .admin-stats__grid,
+    .admin-stats__grid--small {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .admin__title {
+        font-size: 28px;
+    }
+
+    .admin-choice {
+        width: 100%;
+    }
+
+    .admin-active {
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .admin-active__button {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .admin-settings__actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        text-align: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-flash__message,
+    .admin-flash__message--leaving {
+        animation-duration: 1ms;
+    }
+
+    .admin-flash__message::after {
+        animation-duration: 4s;
+    }
+
+    .admin__sheet--entering {
+        animation: none;
+    }
+
+    .admin__sheet,
+    .admin-active__chip,
+    .admin-active__dot,
+    .admin-active__button,
+    .admin__link,
+    .admin__button,
+    .admin-choice,
+    .admin-segmented__label {
+        transition: none;
+    }
+}

@@ -1,0 +1,82 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Partie n° {{ president.id }} : Président | Administration Playora{% endblock %}
+
+{% block admin_id %}partie{% endblock %}
+
+{% block admin_body %}
+    {% set room = president.room %}
+
+    <p class="admin__breadcrumb"><a class="admin__back" href="{{ path('admin_president_statistics') }}">Statistiques</a> › Partie n° {{ president.id }}</p>
+    <h1 class="admin__title">Partie n° {{ president.id }}</h1>
+
+    <dl class="admin-stats__grid admin-stats__grid--small">
+        {% for item in [
+            {label: 'Début', value: room.startedAt ? room.startedAt|date('d/m/Y H:i') : '–'},
+            {label: 'Partie en', value: president.goal ~ ' points (' ~ room.targetPoints ~ ' par joueur)'},
+            {label: 'Manche', value: president.round},
+            {label: 'Durée d’un tour', value: room.turnSeconds ~ ' s'},
+            {label: 'État', value: room.finishedAt is null ? 'En cours' : 'Terminée'},
+        ] %}
+            <div class="admin-stats__item">
+                <dt class="admin-stats__label">{{ item.label }}</dt>
+                <dd class="admin-stats__value">{{ item.value }}</dd>
+            </div>
+        {% endfor %}
+    </dl>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="joueurs-titre">Joueurs</h2>
+        <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="joueurs-titre">
+            <table class="admin-games__table admin-sortable">
+                <thead>
+                    <tr>
+                        {% for label in ['Place', 'Joueur', 'Points', 'Résultat'] %}
+                            <th scope="col"><button class="admin-sort" type="button">{{ label }}<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                        <tr>
+                            <td>{{ player.position }}</td>
+                            <td>{{ include('admin/jeu/_player.html.twig', {player: player}) }}</td>
+                            <td data-sort="{{ player.teamScore }}">{{ player.teamScore|number_format(0, ',', ' ') }}</td>
+                            <td>{{ player.hasWon is null ? '–' : (player.hasWon ? 'Gagné' : 'Perdu') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="manches-titre">Manches</h2>
+
+        {% if rounds is empty %}
+            <p class="admin-games__empty">Aucune manche terminée pour l’instant.</p>
+        {% else %}
+            <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="manches-titre">
+                <table class="admin-games__table admin-sortable">
+                    <thead>
+                        <tr>
+                            {% for label in ['Manche', 'Président', 'Pauvre', 'Points'] %}
+                                <th scope="col"><button class="admin-sort" type="button">{{ label }}<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for round in rounds %}
+                            <tr>
+                                <td>{{ round.number }}</td>
+                                <td>{{ include('admin/jeu/_player.html.twig', {player: players[round.order|first + 1] ?? null}) }}</td>
+                                <td>{{ include('admin/jeu/_player.html.twig', {player: players[round.order|last + 1] ?? null}) }}</td>
+                                <td class="admin-games__score">{{ round.points|join(' – ') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

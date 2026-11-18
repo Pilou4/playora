@@ -1,0 +1,154 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Partie de tarot | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Votre partie de tarot en cours sur Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'tarot']) }}{% endblock %}
+
+{% block main_id %}partie{% endblock %}
+
+{# Pendant une partie, pas d'en-tête du site (ni menu, ni déconnexion) : la table prend tout l'écran #}
+{% block site_header %}{% endblock %}
+
+{% block body %}
+    {% set cards = asset(room.cardSet.path) %}
+    <main id="partie" class="game-table belote tarot belote--{{ room.carpet.value }} tarot--{{ room.cardSet.value }}"
+          data-view="{{ view|json_encode }}"
+          data-api-url="{{ path('api_tarot_game', {id: game.id}) }}"
+          data-hub-url="{{ mercure(topic) }}"
+          data-csrf="{{ csrf_token('submit') }}"
+          data-cards-url="{{ cards }}"
+          data-back-url="{{ asset(room.cardBack.path) }}"
+          data-suits-url="{{ asset('images/tapis/') }}"
+          data-leave-url="{{ path('api_tarot_leave', {id: game.id}) }}"
+          data-lobby-url="{{ path('app_game_lobby', {game: room.game.value}) }}">
+        <h1 class="visually-hidden">Partie de tarot en {{ room.targetPoints }} donnes</h1>
+
+        {# Le plateau : il reste dans la page, sous l'en-tête du site #}
+        <div class="belote__frame">
+            <header class="belote__toolbar">
+                <p class="belote__title">Tarot <span class="belote__subtitle">· partie en {{ room.targetPoints }} donnes</span></p>
+                <div class="belote__tools">
+{{ include('game/_sound_button.html.twig') }}
+                    <button class="belote__tool belote__tool--rules" type="button" title="Règles du jeu">
+                        <img src="{{ asset('images/icones/regles.svg') }}" width="18" height="18" alt=""><span class="visually-hidden">Règles du jeu</span>
+                    </button>
+                    <button class="belote__tool belote__tool--fullscreen" type="button" title="Plein écran">
+                        <img src="{{ asset('images/icones/plein-ecran.svg') }}" width="18" height="18" alt=""><span class="visually-hidden">Plein écran</span>
+                    </button>
+                    <button class="belote__quit" type="button">Quitter</button>
+                </div>
+            </header>
+
+            <div class="belote__felt">
+                <div class="belote__mat" aria-hidden="true">
+                    {% for suit in ['trefle', 'carreau', 'coeur', 'pique'] %}
+                        <img class="belote__mat-suit belote__mat-suit--{{ loop.index }}" src="{{ asset('images/tapis/couleur-' ~ suit ~ '.svg') }}" width="26" height="26" alt="">
+                    {% endfor %}
+                </div>
+
+                <section class="belote__players" aria-label="Joueurs"></section>
+
+                <section class="belote__trick" aria-label="Pli en cours"></section>
+
+                <section class="belote__center" aria-live="polite">
+                    <div class="bidding">
+                        <div class="bidding__card"></div>
+                        <div class="bidding__panel">
+                            <p class="bidding__title"></p>
+                            <p class="bidding__text"></p>
+                            <div class="bidding__actions"></div>
+                            {# Jauge du temps pour prendre ou passer (durée réglée dans l'admin) : vide, le joueur passe #}
+                            <div class="bidding__gauge" aria-hidden="true"><span class="bidding__gauge-fill"></span></div>
+                        </div>
+                    </div>
+                    <div class="result">
+                        <p class="result__title"></p>
+                        <p class="result__taker"></p>
+                        <p class="result__line">Vous marquez</p>
+                        <p class="result__points"><span class="result__value"></span> pts</p>
+                        <p class="result__bonus"></p>
+                        <p class="result__them"></p>
+                    </div>
+                </section>
+
+                <section class="last-trick" aria-label="Dernier pli">
+                    <button class="last-trick__toggle" type="button" aria-expanded="false" disabled>
+                        <span class="last-trick__chevron" aria-hidden="true"></span>Dernier pli
+                    </button>
+                    <div class="last-trick__cards"></div>
+                </section>
+
+                {# Scores de chacun (le tarot se joue chacun pour soi) et numéro de la donne #}
+                <section class="score score--open tarot__score" aria-label="Scores">
+                    <button class="score__head tarot__score-head" type="button" aria-expanded="true">
+                        <span>Donne <b class="tarot__deal">1</b>/{{ room.targetPoints }}</span><span class="score__chevron" aria-hidden="true"></span>
+                    </button>
+                    <ol class="tarot__scores"></ol>
+                </section>
+
+                <ol class="hand" aria-label="Votre main"></ol>
+
+                {# Le pupitre du bas : la main en sort, mon avatar est posé à gauche, la discussion au centre #}
+                <div class="belote__console" aria-hidden="true"></div>
+
+                <form class="chat" aria-label="Discussion">
+                    <button class="chat__button chat__button--emoji" type="button" disabled>
+                        <img src="{{ asset('images/emojis/sourire.svg') }}" width="26" height="26" alt="Émojis">
+                    </button>
+                    <button class="chat__button" type="button" disabled>Bonjour</button>
+                    <label class="visually-hidden" for="chat-message">Message</label>
+                    <input class="chat__input" id="chat-message" type="text" placeholder="Discussion bientôt disponible" disabled>
+                </form>
+
+                {# Avant ma première carte : poignée, chelem (les boutons n'apparaissent que si c'est possible) #}
+                <div class="tarot__actions" aria-live="polite"></div>
+
+                <div class="belote__flights" aria-hidden="true"></div>
+
+                <p class="belote__toast" role="status"></p>
+
+                <section class="belote__end" aria-labelledby="fin-titre">
+                    <h2 id="fin-titre" class="belote__end-title"></h2>
+                    <p class="belote__end-score"></p>
+                    <a class="belote__end-link" href="{{ path('app_game_lobby', {game: room.game.value}) }}">Retour aux salons</a>
+                </section>
+            </div>
+        </div>
+
+        <dialog class="belote__rules" aria-labelledby="regles-partie-titre">
+            <div class="belote__rules-head">
+                <h2 id="regles-partie-titre" class="belote__rules-title">Règles du tarot</h2>
+                <button class="belote__rules-close" type="button">Fermer</button>
+            </div>
+            {% include 'game/_rules_tarot.html.twig' with {in_dialog: true} %}
+        </dialog>
+
+        {# Quitter une partie en cours : un robot prend la place, sans retour #}
+        <dialog class="belote__leave" aria-labelledby="quitter-titre" aria-describedby="quitter-texte">
+            <h2 id="quitter-titre" class="belote__leave-title">Quitter la partie ?</h2>
+            <p id="quitter-texte" class="belote__leave-text">Un robot prendra votre place jusqu’à la fin. Vous ne pourrez pas revenir et la partie sera comptée perdue.</p>
+            <p class="belote__leave-error" role="alert"></p>
+            <div class="belote__leave-actions">
+                <button class="belote__leave-stay" type="button">Rester</button>
+                <button class="belote__leave-confirm" type="button">Quitter la partie</button>
+            </div>
+        </dialog>
+
+        <template id="modele-joueur">
+            <div class="player">
+                <div class="player__fan"></div>
+                <div class="player__ring"></div>
+                <span class="player__contract"></span>
+                <p class="player__name"></p>
+                <p class="player__bubble"></p>
+                <span class="player__first" aria-hidden="true">1er</span>
+                <p class="player__pile"><span class="player__pile-count"></span><span class="visually-hidden"> points dans cette donne</span></p>
+            </div>
+        </template>
+    </main>
+{% endblock %}

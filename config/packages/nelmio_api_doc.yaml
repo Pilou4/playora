@@ -1,0 +1,158 @@
+# Documentation de l'API : /api/v1/doc (route dans src/Controller/Api/Doc/DocApiController.php).
+# Les adresses et les données envoyées (#[MapRequestPayload]) sont lues dans les contrôleurs ;
+# on décrit ici ce que le code ne permet pas de deviner : réponses, connexion, jetons.
+# Fichier OpenAPI pour l'application mobile : php bin/console nelmio:apidoc:dump > openapi.json
+nelmio_api_doc:
+    documentation:
+        info:
+            title: API Playora
+            version: 1.0.0
+            description: |
+                API commune au site et à l'application mobile.
+
+                **Connexion** : `POST /api/v1/connexion` renvoie un jeton d'accès (15 min) et un jeton de
+                renouvellement (30 jours). Envoyez le jeton d'accès dans l'en-tête `Authorization: Bearer <jeton>`
+                et renouvelez-le avec `POST /api/v1/jeton/renouveler` quand il expire.
+
+                **Erreurs** : toujours au format `application/problem+json`. Le champ `code` est stable :
+                c'est lui que l'application doit tester.
+
+        security:
+            - Bearer: []
+
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+
+            schemas:
+                Account:
+                    type: object
+                    properties:
+                        id: { type: integer, example: 1 }
+                        email: { type: string, format: email, example: fred@exemple.fr }
+                        pseudo: { type: string, example: Fred }
+                        emailVerified: { type: boolean, example: false }
+                        createdAt: { type: string, format: date-time }
+                Tokens:
+                    type: object
+                    properties:
+                        token: { type: string, description: 'Jeton d''accès JWT (15 minutes)' }
+                        refresh_token: { type: string, description: 'Jeton de renouvellement (30 jours, usage unique)' }
+                        refresh_token_expiration: { type: integer, description: 'Expiration du jeton de renouvellement (horodatage Unix)' }
+                Problem:
+                    type: object
+                    properties:
+                        status: { type: integer, example: 422 }
+                        code: { type: string, example: validation_failed }
+                        title: { type: string, example: Données invalides }
+                        detail: { type: string, example: Certains champs sont invalides. }
+                        violations:
+                            type: array
+                            items:
+                                type: object
+                                properties:
+                                    field: { type: string, example: pseudo }
+                                    message: { type: string, example: Ce pseudo est déjà pris. }
+
+            responses:
+                Problem:
+                    description: Erreur (format commun de l'API)
+                    content:
+                        application/problem+json:
+                            schema: { $ref: '#/components/schemas/Problem' }
+
+        paths:
+            /api/v1/inscription:
+                post:
+                    tags: [Compte]
+                    summary: Créer un compte
+                    security: []
+                    responses:
+                        '201':
+                            description: Compte créé
+                            content:
+                                application/json:
+                                    schema: { $ref: '#/components/schemas/Account' }
+                        '422': { $ref: '#/components/responses/Problem' }
+                        '429': { $ref: '#/components/responses/Problem' }
+
+            /api/v1/connexion:
+                post:
+                    tags: [Connexion]
+                    summary: Se connecter
+                    description: Le site reçoit aussi les jetons dans des cookies sécurisés (BEARER, refresh_token).
+                    security: []
+                    requestBody:
+                        required: true
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    required: [email, password]
+                                    properties:
+                                        email: { type: string, format: email, example: fred@exemple.fr }
+                                        password: { type: string, format: password }
+                    responses:
+                        '200':
+                            description: Connecté
+                            content:
+                                application/json:
+                                    schema: { $ref: '#/components/schemas/Tokens' }
+                        '401': { $ref: '#/components/responses/Problem' }
+                        '429': { $ref: '#/components/responses/Problem' }
+
+            /api/v1/jeton/renouveler:
+                post:
+                    tags: [Connexion]
+                    summary: Renouveler le jeton d'accès
+                    description: Jeton lu dans le cookie (site) ou dans le corps JSON (mobile). Un nouveau jeton de renouvellement est renvoyé à chaque fois.
+                    security: []
+                    requestBody:
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        refresh_token: { type: string }
+                    responses:
+                        '200':
+                            description: Nouveaux jetons
+                            content:
+                                application/json:
+                                    schema: { $ref: '#/components/schemas/Tokens' }
+                        '401': { $ref: '#/components/responses/Problem' }
+
+            /api/v1/deconnexion:
+                post:
+                    tags: [Connexion]
+                    summary: Se déconnecter
+                    security: []
+                    requestBody:
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        refresh_token: { type: string, description: 'Application mobile uniquement' }
+                    responses:
+                        '204': { description: 'Déconnecté' }
+
+            /api/v1/moi:
+                get:
+                    tags: [Compte]
+                    summary: Mon compte
+                    responses:
+                        '200':
+                            description: Compte du joueur connecté
+                            content:
+                                application/json:
+                                    schema: { $ref: '#/components/schemas/Account' }
+                        '401': { $ref: '#/components/responses/Problem' }
+
+    areas:
+        default:
+            path_patterns:
+                - ^/api/v1/(?!doc)

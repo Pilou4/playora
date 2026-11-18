@@ -1,0 +1,126 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Partie n° {{ belote.id }} : {{ game.label }} | Administration Playora{% endblock %}
+
+{% block admin_id %}partie{% endblock %}
+
+{% block admin_body %}
+    {% set room = belote.room %}
+    {% set outcomes = {reussi: 'Rempli', chute: 'Chuté', litige: 'Litige'} %}
+    {% set suits = {pique: 'Pique', coeur: 'Cœur', carreau: 'Carreau', trefle: 'Trèfle', 'tout-atout': 'Tout atout', 'sans-atout': 'Sans atout'} %}
+
+    <p class="admin__breadcrumb"><a class="admin__back" href="{{ path('admin_game_statistics', {game: game.value}) }}">Statistiques</a> › Partie n° {{ belote.id }}</p>
+    <h1 class="admin__title">Partie n° {{ belote.id }}</h1>
+
+    <dl class="admin-stats__grid admin-stats__grid--small">
+        <div class="admin-stats__item">
+            <dt class="admin-stats__label">Début</dt>
+            <dd class="admin-stats__value">{{ room.startedAt ? room.startedAt|date('d/m/Y H:i') : '–' }}</dd>
+        </div>
+        <div class="admin-stats__item">
+            <dt class="admin-stats__label">Score</dt>
+            <dd class="admin-stats__value">{{ belote.team1Score }} – {{ belote.team2Score }}</dd>
+        </div>
+        <div class="admin-stats__item">
+            <dt class="admin-stats__label">Variante</dt>
+            <dd class="admin-stats__value">{{ room.variant.label }}</dd>
+        </div>
+        <div class="admin-stats__item">
+            <dt class="admin-stats__label">Partie en</dt>
+            <dd class="admin-stats__value">{{ room.targetPoints }}</dd>
+        </div>
+        <div class="admin-stats__item">
+            <dt class="admin-stats__label">Durée d’un tour</dt>
+            <dd class="admin-stats__value">{{ room.turnSeconds }} s</dd>
+        </div>
+        <div class="admin-stats__item">
+            <dt class="admin-stats__label">Pour prendre ou passer</dt>
+            <dd class="admin-stats__value">{{ room.bidSeconds }} s</dd>
+        </div>
+        <div class="admin-stats__item">
+            <dt class="admin-stats__label">État</dt>
+            <dd class="admin-stats__value">{{ belote.winnerTeam is null ? 'En cours' : 'Équipe ' ~ (belote.winnerTeam) }}</dd>
+        </div>
+    </dl>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="joueurs-titre">Joueurs</h2>
+        <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="joueurs-titre">
+            <table class="admin-games__table admin-sortable">
+                <thead>
+                    <tr>
+                        <th scope="col"><button class="admin-sort" type="button">Place<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        <th scope="col"><button class="admin-sort" type="button">Joueur<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        <th scope="col"><button class="admin-sort" type="button">Équipe<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        <th scope="col"><button class="admin-sort" type="button">Plis<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        <th scope="col"><button class="admin-sort" type="button">Points ramassés<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        <th scope="col"><button class="admin-sort" type="button">Contrats pris<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        <th scope="col"><button class="admin-sort" type="button">Contrats remplis<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        <th scope="col"><button class="admin-sort" type="button">Résultat<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                        <tr>
+                            <td>{{ player.position }}</td>
+                            <td>{{ include('admin/jeu/_player.html.twig', {player: player}) }}</td>
+                            <td>{{ player.team }}</td>
+                            <td>{{ player.tricksWon }}</td>
+                            <td>{{ player.pointsCollected }}</td>
+                            <td>{{ player.contractsTaken }}</td>
+                            <td>{{ player.contractsMade }}</td>
+                            <td>{{ player.hasWon is null ? '–' : (player.hasWon ? 'Gagné' : 'Perdu') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="donnes-titre">Donnes</h2>
+
+        {% if deals is empty %}
+            <p class="admin-games__empty">Aucune donne terminée pour l’instant.</p>
+        {% else %}
+            <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="donnes-titre">
+                <table class="admin-games__table admin-sortable">
+                    <thead>
+                        <tr>
+                            <th scope="col"><button class="admin-sort" type="button">N°<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Donneur<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Preneur<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Atout<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Contrat<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Résultat<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Cartes éq. 1<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Cartes éq. 2<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Marqués éq. 1<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Marqués éq. 2<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Belote<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            <th scope="col"><button class="admin-sort" type="button">Capot<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deal in deals %}
+                            <tr>
+                                <td>{{ deal.number }}</td>
+                                <td>{{ include('admin/jeu/_player.html.twig', {player: players[deal.dealer] ?? null}) }}</td>
+                                <td>{{ include('admin/jeu/_player.html.twig', {player: players[deal.taker] ?? null}) }}</td>
+                                <td>{{ suits[deal.trump] ?? deal.trump }}</td>
+                                <td data-sort="{{ deal.contract ?? 0 }}">{{ deal.contract ? ({250: 'Capot', 500: 'Générale'}[deal.contract] ?? deal.contract) ~ (deal.multiplier > 1 ? ' ×' ~ deal.multiplier : '') : '–' }}</td>
+                                <td><span class="admin-badge admin-badge--{{ deal.outcome }}">{{ outcomes[deal.outcome] ?? deal.outcome }}</span></td>
+                                <td>{{ deal.cardPoints(1) }}</td>
+                                <td>{{ deal.cardPoints(2) }}</td>
+                                <td>{{ deal.scored(1) }}</td>
+                                <td>{{ deal.scored(2) }}</td>
+                                <td>{{ deal.beloteTeam ? 'Équipe ' ~ deal.beloteTeam : '–' }}</td>
+                                <td>{{ deal.capotTeam ? 'Équipe ' ~ deal.capotTeam : '–' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

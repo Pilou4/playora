@@ -154,16 +154,55 @@ final class RegistrationControllerTest extends WebTestCase
         self::assertSelectorTextContains('.field--error .field__error', 'Ce pseudo est déjà pris.');
     }
 
-    public function testExistingEmailGetsTheSameAnswerAndOnlyTheOwnerIsWarned(): void
+    public function testThePasswordMustBeConfirmed(): void
+    {
+        // Confirmation différente : refusé, rien n'est créé
+        $this->submit('fred@exemple.fr', 'Fred', self::STRONG_PASSWORD, self::STRONG_PASSWORD.'x');
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextSame('#registration_form_confirmPassword_error', 'Les deux mots de passe ne correspondent pas.');
+        self::assertNull($this->users()->findOneBy(['email' => 'fred@exemple.fr']));
+
+        // Confirmation vide : refusé aussi
+        $this->submit('fred@exemple.fr', 'Fred', self::STRONG_PASSWORD, '');
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextSame('#registration_form_confirmPassword_error', 'Saisissez à nouveau le mot de passe.');
+
+        // Identiques mais trop faibles : refusé (les critères restent exigés)
+        $this->submit('fred@exemple.fr', 'Fred', 'court', 'court');
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextSame('#registration_form_plainPassword_error', 'Au moins 12 caractères.');
+
+        // Identiques et conformes : le compte est créé
+        $this->submit('fred@exemple.fr', 'Fred', self::STRONG_PASSWORD);
+        self::assertResponseRedirects('/inscription/verifiez-vos-emails');
+        self::assertNotNull($this->users()->findOneBy(['email' => 'fred@exemple.fr']));
+    }
+
+    public function testExistingEmailIsRefusedWithoutSendingAnything(): void
     {
         $this->createUser('fred@exemple.fr', 'Fred', verified: true);
 
-        $this->submit('FRED@exemple.fr', 'NouveauFred', self::STRONG_PASSWORD);
+        // Majuscules et espaces ne changent rien : c'est la même adresse
+        $this->submit(' FRED@exemple.fr ', 'NouveauFred', self::STRONG_PASSWORD);
 
-        self::assertResponseRedirects('/inscription/verifiez-vos-emails');
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('.field--error .field__error', 'Un compte existe déjà avec cette adresse e-mail.');
         self::assertNull($this->users()->findOneBy(['pseudo' => 'NouveauFred']));
-        self::assertQueuedEmailCount(1);
-        self::assertEmailSubjectContains(self::getMailerMessage(), 'existe déjà');
+        self::assertCount(1, $this->users()->findAll());
+        self::assertQueuedEmailCount(0);
+    }
+
+    public function testExistingEmailAndPseudoAreBothReported(): void
+    {
+        $this->createUser('fred@exemple.fr', 'Fred');
+
+        $this->submit('fred@exemple.fr', 'FRED', self::STRONG_PASSWORD);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorCount(2, '.field--error');
+        self::assertSelectorTextContains('main', 'Un compte existe déjà avec cette adresse e-mail.');
+        self::assertSelectorTextContains('main', 'Ce pseudo est déjà pris.');
+        self::assertQueuedEmailCount(0);
     }
 
     public function testFormWithoutOriginIsRefused(): void
@@ -224,6 +263,41 @@ final class RegistrationControllerTest extends WebTestCase
         self::assertSelectorTextContains('.site-header__pseudo', 'Fred');
     }
 
+    public function testLinkOpenedWhileLoggedInWithAnotherAccountSaysSo(): void
+    {
+        $admin = $this->createUser('admin@exemple.fr', 'Admin', verified: true);
+        $fred = $this->createUser('fred@exemple.fr', 'Fred');
+        $this->client->loginUser($admin);
+
+        $this->client->request('GET', $this->signedUrl($fred));
+        self::assertResponseRedirects('/inscription/confirmee');
+        $this->entityManager->refresh($fred);
+        self::assertTrue($fred->isEmailVerified());
+
+        // Pas d'arrivée sur l'accueil avec le compte Admin : la page dit quel compte est confirmé et lequel est connecté
+        $this->client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Fred');
+        self::assertSelectorTextContains('.auth__lead', '« Admin »');
+        self::assertSelectorExists('main form[action="/deconnexion"] button');
+    }
+
+    public function testTheBrowserThatCreatedTheAccountLogsInOnceConfirmedElsewhere(): void
+    {
+        $this->submit('fred@exemple.fr', 'Fred', self::STRONG_PASSWORD);
+        $user = $this->users()->findOneBy(['email' => 'fred@exemple.fr']);
+        // Le lien a été cliqué dans un autre navigateur
+        $user->markEmailAsVerified();
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/inscription/verifiez-vos-emails');
+        self::assertResponseRedirects('/inscription/confirmee');
+        $this->client->followRedirect();
+        self::assertResponseRedirects('/bienvenue');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.site-header__pseudo', 'Fred');
+    }
+
     public function testStatusOnlyTellsAboutTheAccountCreatedInThisBrowser(): void
     {
         $this->client->request('GET', '/inscription/statut');
@@ -259,6 +333,7 @@ final class RegistrationControllerTest extends WebTestCase
         $this->createUser('fred@exemple.fr', 'Fred', verified: true);
 
         $this->submit('fred@exemple.fr', 'NouveauFred', self::STRONG_PASSWORD);
+        self::assertResponseStatusCodeSame(422);
         $this->client->request('GET', '/inscription/statut');
 
         self::assertSame(['confirmed' => false], json_decode((string) $this->client->getResponse()->getContent(), true));
@@ -298,7 +373,7 @@ final class RegistrationControllerTest extends WebTestCase
         self::assertQueuedEmailCount(0);
     }
 
-    private function submit(string $email, string $pseudo, string $password): void
+    private function submit(string $email, string $pseudo, string $password, ?string $confirm = null): void
     {
         $crawler = $this->client->request('GET', '/inscription');
 
@@ -306,6 +381,7 @@ final class RegistrationControllerTest extends WebTestCase
             'registration_form[email]' => $email,
             'registration_form[pseudo]' => $pseudo,
             'registration_form[plainPassword]' => $password,
+            'registration_form[confirmPassword]' => $confirm ?? $password,
         ]));
     }
 

@@ -13,6 +13,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Form\FormError;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,7 +32,10 @@ final class RegistrationController extends AbstractController
     private const string SESSION_PSEUDO = 'verified_pseudo';
     /** Compte créé dans CE navigateur : sert à la page d'attente et à la connexion automatique. */
     private const string SESSION_PENDING_USER = 'pending_user_id';
+    /** Lien ouvert dans un navigateur connecté avec un autre compte : le pseudo de ce compte-là. */
+    private const string SESSION_OTHER_ACCOUNT = 'confirmed_other_account';
     private const string TOO_MANY_ATTEMPTS = 'Trop de tentatives : réessayez un peu plus tard.';
+    private const string EMAIL_TAKEN = 'Un compte existe déjà avec cette adresse e-mail.';
 
     #[Route('', name: 'app_register', methods: ['GET', 'POST'])]
     public function register(
@@ -53,13 +57,12 @@ final class RegistrationController extends AbstractController
 
             if (!$registrationLimiter->create($request->getClientIp())->consume()->isAccepted()) {
                 $form->addError(new FormError(self::TOO_MANY_ATTEMPTS));
-            } elseif ($users->pseudoExists($data['pseudo'])) {
-                $form->get('pseudo')->addError(new FormError('Ce pseudo est déjà pris.'));
+            } elseif ($this->isTaken($form, $users, $data)) {
+                // Adresse ou pseudo déjà pris : le message est sous le champ, rien n'est enregistré ni envoyé
             } else {
                 $user = $registration->register($data['email'], $data['pseudo'], $data['plainPassword']);
                 $session = $request->getSession();
                 $session->set(self::SESSION_EMAIL, $data['email']);
-                // Rien n'est enregistré si l'adresse existait déjà : la page d'attente se comporte pareil
                 $session->set(self::SESSION_PENDING_USER, $user?->getId());
 
                 return $this->redirectToRoute('app_register_check_email');
@@ -70,9 +73,16 @@ final class RegistrationController extends AbstractController
     }
 
     #[Route('/verifiez-vos-emails', name: 'app_register_check_email', methods: ['GET'])]
-    public function checkEmail(Request $request, UserRepository $users): Response
+    public function checkEmail(Request $request, UserRepository $users, Security $security): Response
     {
         if ($this->isPendingUserConfirmed($request, $users)) {
+            // Lien cliqué ailleurs (autre navigateur, messagerie) : le navigateur qui a créé le compte s'y connecte
+            $pending = $users->find((int) $request->getSession()->get(self::SESSION_PENDING_USER));
+
+            if (null === $this->getUser() && null !== $pending && !$pending->isDeleted()) {
+                $security->login($pending, 'form_login', 'main');
+            }
+
             return $this->redirectToRoute('app_register_confirmed');
         }
 
@@ -118,10 +128,14 @@ final class RegistrationController extends AbstractController
         }
 
         $session = $request->getSession();
+        $current = $this->getUser();
 
         // Connexion automatique seulement dans le navigateur qui a créé le compte
-        if ($session->get(self::SESSION_PENDING_USER) === $user->getId() && null === $this->getUser()) {
+        if ($session->get(self::SESSION_PENDING_USER) === $user->getId() && null === $current) {
             $security->login($user, 'form_login', 'main');
+        } elseif ($current instanceof User && $current->getId() !== $user->getId()) {
+            // Ce navigateur est connecté avec un autre compte : on le dit, on ne fait pas comme si c'était le nouveau
+            $session->set(self::SESSION_OTHER_ACCOUNT, $current->getPseudo());
         }
 
         $request->getSession()->set(self::SESSION_PSEUDO, $user->getPseudo());
@@ -134,14 +148,16 @@ final class RegistrationController extends AbstractController
     {
         $session = $request->getSession();
         $session->remove(self::SESSION_PENDING_USER);
+        $other = $session->remove(self::SESSION_OTHER_ACCOUNT);
 
-        // Connecté par le lien : on passe tout de suite au choix de l'avatar
-        if ($this->getUser() instanceof User) {
+        // Connecté avec le nouveau compte : on passe tout de suite au choix de l'avatar
+        if ($this->getUser() instanceof User && null === $other) {
             return $this->redirectToRoute('app_welcome');
         }
 
         return $this->render('registration/confirmed.html.twig', [
             'pseudo' => $session->remove(self::SESSION_PSEUDO),
+            'other' => $other,
         ]);
     }
 
@@ -180,6 +196,30 @@ final class RegistrationController extends AbstractController
         $session->set(self::SESSION_EMAIL, $email);
 
         return $this->redirectToRoute('app_register_check_email');
+    }
+
+    /**
+     * Une adresse e-mail et un pseudo ne servent qu'à un seul compte (sans tenir compte des majuscules ;
+     * ni des accents pour le pseudo). Chaque champ déjà pris reçoit son message.
+     *
+     * @param FormInterface<mixed>                                          $form
+     * @param array{email: string, pseudo: string, plainPassword: string} $data
+     */
+    private function isTaken(FormInterface $form, UserRepository $users, array $data): bool
+    {
+        $taken = false;
+
+        if ($users->emailExists($data['email'])) {
+            $form->get('email')->addError(new FormError(self::EMAIL_TAKEN));
+            $taken = true;
+        }
+
+        if ($users->pseudoExists($data['pseudo'])) {
+            $form->get('pseudo')->addError(new FormError('Ce pseudo est déjà pris.'));
+            $taken = true;
+        }
+
+        return $taken;
     }
 
     private function isPendingUserConfirmed(Request $request, UserRepository $users): bool

@@ -35,7 +35,8 @@
     <body class="site">
         <a class="skip-link" href="#{% block main_id %}contenu{% endblock %}">Aller au contenu</a>
 
-        {% include '_partials/_header.html.twig' %}
+        {# Les pages de partie retirent l'en-tête : le jeu prend tout l'écran #}
+        {% block site_header %}{% include '_partials/_header.html.twig' %}{% endblock %}
 
         {% block body %}{% endblock %}
 

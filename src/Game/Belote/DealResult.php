@@ -17,13 +17,20 @@ final readonly class DealResult
         public int $number,
         public int $dealer,
         public int $taker,
-        public Suit $trump,
+        /** Null en tout atout et en sans atout (voir $mode). */
+        public ?Suit $trump,
         public Outcome $outcome,
         public array $cardPoints,
         public array $scored,
         public ?int $beloteTeam,
         public ?int $capotTeam,
         public int $pendingAfter,
+        /** Coinche et contrée : contrat et multiplicateur (1, coinché 2, surcoinché 4). */
+        public ?int $contract = null,
+        public int $multiplier = 1,
+        /** Points d'annonces de chaque équipe (une seule en marque). @var array{int, int} */
+        public array $announces = [0, 0],
+        public TrumpMode $mode = TrumpMode::Suit,
     ) {
     }
 
@@ -41,12 +48,16 @@ final readonly class DealResult
             'number' => $this->number,
             'dealer' => $this->dealer,
             'taker' => $this->taker,
-            'trump' => $this->trump->value,
+            'trump' => $this->trump?->value,
+            'mode' => $this->mode->value,
             'outcome' => $this->outcome->value,
             'cardPoints' => $this->cardPoints,
             'scored' => $this->scored,
             'beloteTeam' => $this->beloteTeam,
             'capotTeam' => $this->capotTeam,
+            'contract' => $this->contract,
+            'multiplier' => $this->multiplier,
+            'announces' => $this->announces,
         ];
     }
 }

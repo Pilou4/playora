@@ -18,6 +18,7 @@ use App\Game\Belote\Card;
 use App\Game\Belote\Outcome;
 use App\Game\Belote\Phase;
 use App\Game\Belote\Suit;
+use App\Game\Belote\TrumpMode;
 use App\Repository\BeloteGameRepository;
 use App\Repository\GamePlayerRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -52,7 +53,7 @@ final readonly class BeloteTable
      */
     public function create(GameRoom $room): BeloteGame
     {
-        [$state, $result] = $this->engine->start($room->getTargetPoints(), (new Randomizer())->getInt(0, 3));
+        [$state, $result] = $this->engine->start($room->getTargetPoints(), (new Randomizer())->getInt(0, 3), $room->getVariant(), $room->hasAnnouncements());
 
         foreach ($room->getSeats() as $seat) {
             $this->entityManager->persist(new GamePlayer($room, $seat));
@@ -76,6 +77,42 @@ final readonly class BeloteTable
         return $this->act($user, $game, fn (BeloteState $state, int $position): ActionResult => $take
             ? $this->engine->take($state, $position, $suit)
             : $this->engine->pass($state, $position));
+    }
+
+    /**
+     * Coinche et contrée : annoncer un contrat à une couleur.
+     *
+     * @throws BeloteException
+     */
+    public function announce(User $user, BeloteGame $game, int $contract, ?Suit $suit, TrumpMode $mode = TrumpMode::Suit): ActionResult
+    {
+        return $this->act($user, $game, fn (BeloteState $state, int $position): ActionResult => $this->engine->bid($state, $position, $contract, $suit, $mode));
+    }
+
+    /**
+     * @throws BeloteException
+     */
+    public function coinche(User $user, BeloteGame $game): ActionResult
+    {
+        return $this->act($user, $game, fn (BeloteState $state, int $position): ActionResult => $this->engine->coinche($state, $position));
+    }
+
+    /**
+     * @throws BeloteException
+     */
+    public function surcoinche(User $user, BeloteGame $game): ActionResult
+    {
+        return $this->act($user, $game, fn (BeloteState $state, int $position): ActionResult => $this->engine->surcoinche($state, $position));
+    }
+
+    /**
+     * Déclarer ses annonces, avant de jouer sa première carte.
+     *
+     * @throws BeloteException
+     */
+    public function declare(User $user, BeloteGame $game): ActionResult
+    {
+        return $this->act($user, $game, fn (BeloteState $state, int $position): ActionResult => $this->engine->declare($state, $position));
     }
 
     /**
@@ -111,6 +148,41 @@ final readonly class BeloteTable
 
             return $this->engine->play($state, $turn, $cards[(new Randomizer())->getInt(0, \count($cards) - 1)]);
         });
+    }
+
+    /**
+     * Le joueur quitte la partie en cours : un robot prend sa place jusqu'à la fin, sans retour possible,
+     * et la partie lui est comptée perdue. S'il ne reste plus aucun joueur, les robots finissent la partie.
+     *
+     * @throws BeloteException
+     */
+    public function abandon(User $user, BeloteGame $game): void
+    {
+        $this->entityManager->wrapInTransaction(function () use ($user, $game): void {
+            $this->games->lock($game);
+            $room = $game->getRoom();
+            $seat = $room->getSeatOf($user) ?? throw new BeloteException('Vous n’êtes pas à cette table.');
+            $state = $game->getState();
+
+            if (Phase::Finished === $state->phase) {
+                throw new BeloteException('La partie est déjà terminée.');
+            }
+
+            $seat->occupyWithBot();
+            $this->players->findByRoomIndexed($room)[$seat->getPosition()]?->finish(false);
+
+            $result = new ActionResult([['type' => 'left', 'position' => $seat->getPosition() - 1, 'pseudo' => $user->getPseudo()]]);
+            $humans = array_filter($room->getSeats(), static fn ($other): bool => null !== $other->getUser());
+
+            // Plus personne à la table : les robots jouent la partie jusqu'au bout (statistiques complètes)
+            for ($rounds = 0; Phase::Finished !== $state->phase && ($rounds < 1 || [] === $humans) && $rounds < 50; ++$rounds) {
+                $result = $result->merge($this->runBots($room, $state));
+            }
+
+            $this->save($game, $state, $result);
+        });
+
+        $this->notifier->changed($game);
     }
 
     /**
@@ -172,7 +244,10 @@ final readonly class BeloteTable
     private function botAct(BeloteState $state): ActionResult
     {
         try {
-            return $this->bot->act($state);
+            // Un robot déclare toujours ses annonces avant sa première carte
+            $declared = [] !== $this->engine->declarable($state, $state->turn) ? $this->engine->declare($state, $state->turn) : new ActionResult();
+
+            return $declared->merge($this->bot->act($state));
         } catch (\Throwable $exception) {
             $this->logger->error('Robot de belote en erreur : coup de secours joué.', ['exception' => $exception]);
 
@@ -189,7 +264,8 @@ final readonly class BeloteTable
     {
         $room = $game->getRoom();
         $players = $this->players->findByRoomIndexed($room);
-        $game->save($state, $result->events);
+        $onlyDeclared = [] !== $result->events && [] === array_filter($result->events, static fn (array $event): bool => 'declared' !== $event['type']);
+        $game->save($state, $result->events, keepClock: $onlyDeclared);
 
         foreach ($result->deals as $deal) {
             $this->entityManager->persist(new BeloteDeal($game, $deal));
@@ -200,7 +276,10 @@ final readonly class BeloteTable
             $position = $seatPosition - 1;
             $player->update($state->playerTricks[$position], $state->playerPoints[$position], $state->scores[$position % 2]);
 
-            if (null !== $state->winnerTeam) {
+            // Un joueur qui a quitté la partie (remplacé par un robot) reste perdant
+            $left = $room->getSeat($seatPosition)?->getUser() !== $player->getUser();
+
+            if (null !== $state->winnerTeam && !$left) {
                 $player->finish($state->winnerTeam === $position % 2);
             }
         }

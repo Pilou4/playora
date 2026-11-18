@@ -27,6 +27,7 @@ final readonly class GameRoomState
         private ProfileRepository $profiles,
         private AvatarCatalog $catalog,
         private UrlGeneratorInterface $urls,
+        private PlayerRoom $playerRoom,
         #[Autowire(env: 'bool:PLAYORA_BOTS')]
         private bool $botsEnabled,
     ) {
@@ -37,11 +38,13 @@ final readonly class GameRoomState
      */
     public function forGame(Game $game, ?User $viewer): array
     {
-        $mine = null === $viewer ? null : $this->rooms->findCurrentFor($viewer);
+        $mine = null === $viewer ? null : $this->playerRoom->current($viewer);
 
+        // Duel solo : la liste ne montre que les duels qu'on peut encore rejoindre (pas ceux où l'on a déjà joué :
+        // on les retrouve dans « Mes parties »)
         $rooms = array_values(array_filter(
             $this->rooms->findWaitingPublic($game),
-            static fn (GameRoom $room): bool => $room !== $mine,
+            static fn (GameRoom $room): bool => $room !== $mine && !($game->isPatience() && null !== $viewer && null !== $room->getSeatOf($viewer)),
         ));
         $avatars = $this->avatars([...$rooms, ...(null === $mine ? [] : [$mine])]);
 
@@ -49,11 +52,13 @@ final readonly class GameRoomState
             'rooms' => array_map(fn (GameRoom $room): array => $this->room($room, $viewer, $avatars), $rooms),
             'mine' => null === $mine ? null : [
                 ...$this->room($mine, $viewer, $avatars),
-                'status' => $mine->getStatus()->value,
-                'playUrl' => $this->urls->generate('app_game_play', ['game' => $game->value, 'id' => $mine->getId()]),
+                // Duel solo : la partie du joueur est en cours dès qu'il a sa place
+                'status' => $game->isPatience() ? 'playing' : $mine->getStatus()->value,
+                'playUrl' => $this->urls->generate('app_game_play', ['game' => $mine->getGame()->value, 'id' => $mine->getId()]),
             ],
-            // Mode test : bouton « Robot » sous les places libres de son salon
-            'bots' => $this->botsEnabled,
+            // Mode test, administrateurs seulement : bouton « Robot » sous les places libres de son salon
+            // (jeux en direct seulement : pas de robots en duel solo)
+            'bots' => $this->botsEnabled && !$game->isPatience() && null !== $viewer && \in_array(User::ROLE_ADMIN, $viewer->getRoles(), true),
         ];
     }
 
@@ -88,8 +93,16 @@ final readonly class GameRoomState
         return [
             'id' => $room->getId(),
             'targetPoints' => $room->getTargetPoints(),
+            // « 501 pts » (belote, coinche, contrée), « 4 donnes » (tarot), « 3 manches » (solitaire)
+            'targetLabel' => $room->getGame()->targetLabel($room->getTargetPoints()),
+            'variant' => $room->getVariant()->value,
+            'variantLabel' => $room->getVariant()->label(),
             'rounds' => $room->getRounds(),
             'announcements' => $room->hasAnnouncements(),
+            // Duel solo où le joueur a déjà joué : le lien vers le tableau de ses résultats
+            'resultUrl' => null !== $viewer && $room->getGame()->isPatience() && null !== $room->getSeatOf($viewer)
+                ? $this->urls->generate('app_duel_result', ['id' => $room->getId()])
+                : null,
             'seats' => array_map(fn (GameRoomSeat $seat): ?array => match (true) {
                 $seat->isBot() => ['pseudo' => 'Robot', 'color' => $seat->getPosition(), 'avatar' => $this->avatarUrl($this->botAvatar($seat)), 'me' => false, 'bot' => true],
                 null === $seat->getUser() => null,

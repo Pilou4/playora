@@ -1,0 +1,179 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Réglages : {{ game.label }} | Administration Playora{% endblock %}
+
+{% block admin_id %}reglages{% endblock %}
+
+{# Une carte de l'aperçu : son image suit le jeu de cartes choisi (SettingsPreview.js) #}
+{% macro card(path, code, modifier, ext) %}
+    <img class="admin-preview__card {{ modifier }}" src="{{ path ~ code ~ '.' ~ ext }}" data-card="{{ code }}" width="60" height="84" alt="">
+{% endmacro %}
+
+{# Un dos de carte de l'aperçu : il suit le dos choisi #}
+{% macro back(url) %}
+    <img class="admin-preview__card admin-preview__card--back" src="{{ url }}" width="60" height="84" alt="">
+{% endmacro %}
+
+{% block admin_body %}
+    {% import _self as ui %}
+    {% set current_set = form.cardSet.vars.data ?? enum_cases('App\\Enum\\CardSet')|first %}
+    {% set cards = asset(current_set.path) %}
+    {% set ext = current_set.extension %}
+    {# Cartes montrées dans les aperçus : le tarot a ses propres noms de fichiers #}
+    {% set codes = game.isTarot
+        ? {trick: ['trefle-10', 'trefle-roi', 'atout-8'], hand: ['excuse', 'atout-21', 'atout-1', 'coeur-roi', 'pique-dame', 'carreau-cavalier', 'trefle-valet', 'coeur-7'], mini: ['coeur-roi', 'atout-21'], choice: ['coeur-roi', 'pique-dame', 'atout-21', 'atout-1', 'excuse']}
+        : {trick: ['trefle/10', 'trefle/as', 'trefle/8'], hand: ['coeur/valet', 'coeur/9', 'pique/as', 'pique/10', 'carreau/roi', 'trefle/dame', 'trefle/8', 'carreau/7'], mini: ['coeur/valet', 'pique/as'], choice: ['coeur/valet', 'pique/dame', 'carreau/roi', 'trefle/as', 'coeur/10']} %}
+    {% set back = asset((form.cardBack.vars.data ?? enum_cases('App\\Enum\\CardBack')|first).path) %}
+    {% set carpet = (form.carpet.vars.data ?? enum_cases('App\\Enum\\Carpet')|first).value %}
+
+    <p class="admin__breadcrumb">Jeux › {{ game.label }}</p>
+    <div class="admin-head">
+        <div class="admin-head__text">
+            <h1 class="admin__title">Réglages de la {{ game.label|lower }}</h1>
+            <p class="admin__lead">Ces réglages s’appliquent à toutes les nouvelles parties.</p>
+        </div>
+
+        {# En ligne / hors ligne : l'état, puis le bouton qui le change (ActiveToggle.js l'envoie sans recharger la page).
+           Hors ligne : le jeu est caché de la liste des jeux, seuls les admins y jouent pour le tester. #}
+        <form class="admin-active{% if not active %} admin-active--off{% endif %}" method="post" action="{{ path('admin_game_active', {game: game.value}) }}" data-game="{{ game.value }}">
+            <input type="hidden" name="_token" value="{{ csrf_token(active_token) }}">
+            <input class="admin-active__value" type="hidden" name="active" value="{{ active ? '0' : '1' }}">
+            <p class="admin-active__chip" title="{{ active ? 'Visible dans la liste des jeux' : 'Caché : seuls les admins y jouent' }}">
+                <span class="admin-active__dot" aria-hidden="true"></span>
+                <span class="admin-active__state">{{ active ? 'En ligne' : 'Hors ligne' }}</span>
+            </p>
+            <button class="admin-active__button" type="submit">{{ active ? 'Mettre hors ligne' : 'Mettre en ligne' }}</button>
+        </form>
+    </div>
+
+    {{ form_start(form) }}
+        <div class="admin-settings">
+            <section class="admin-settings__preview" aria-labelledby="apercu-titre">
+                <h2 class="admin-settings__label" id="apercu-titre">Aperçu de la table</h2>
+                <div class="admin-preview admin-preview--main admin-preview--{{ carpet }}" aria-hidden="true">
+                    <span class="admin-preview__mat"></span>
+                    <span class="admin-preview__trick">
+                        {% for code in codes.trick %}{{ ui.card(cards, code, 'admin-preview__card--trick', ext) }}{% endfor %}
+                    </span>
+                    {% for side in ['top', 'left', 'right'] %}
+                        <span class="admin-preview__backs admin-preview__backs--{{ side }}">
+                            {% for i in 1..5 %}{{ ui.back(back) }}{% endfor %}
+                        </span>
+                    {% endfor %}
+                    <span class="admin-preview__hand">
+                        {% for code in codes.hand %}
+                            {{ ui.card(cards, code, 'admin-preview__card--hand', ext) }}
+                        {% endfor %}
+                    </span>
+                </div>
+            </section>
+
+            <fieldset class="admin-settings__group">
+                <legend class="admin-settings__label">{{ form.carpet.vars.label }}</legend>
+                <p class="admin-settings__help">Le tapis de toutes les tables.</p>
+                <div class="admin-settings__choices">
+                    {% for choice in form.carpet %}
+                        <label class="admin-choice">
+                            {{ form_widget(choice, {attr: {class: 'admin-choice__input admin-choice__input--carpet visually-hidden'}}) }}
+                            <span class="admin-choice__visual">
+                                <span class="admin-preview admin-preview--mini admin-preview--{{ choice.vars.value }}">
+                                    <span class="admin-preview__mat"></span>
+                                    <span class="admin-preview__trick">
+                                        {% for code in codes.mini %}{{ ui.card(cards, code, 'admin-preview__card--trick', ext) }}{% endfor %}
+                                    </span>
+                                </span>
+                            </span>
+                            <span class="admin-choice__name">{{ choice.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.carpet) }}
+            </fieldset>
+
+            <fieldset class="admin-settings__group">
+                <legend class="admin-settings__label">{{ form.cardSet.vars.label }}</legend>
+                <p class="admin-settings__help">Le dessin des faces (As, Rois, Dames…).</p>
+                <div class="admin-settings__choices">
+                    {% for choice in form.cardSet %}
+                        {% set path = '' %}
+                        {% set set_ext = 'svg' %}
+                        {% for set in enum_cases('App\\Enum\\CardSet') %}
+                            {% if set.value == choice.vars.value %}{% set path = asset(set.path) %}{% set set_ext = set.extension %}{% endif %}
+                        {% endfor %}
+                        <label class="admin-choice">
+                            {{ form_widget(choice, {attr: {class: 'admin-choice__input admin-choice__input--cards visually-hidden', 'data-path': path, 'data-ext': set_ext}}) }}
+                            <span class="admin-choice__visual admin-choice__visual--cards">
+                                {% for code in codes.choice %}
+                                    <img class="admin-choice__card" src="{{ path ~ code ~ '.' ~ set_ext }}" width="46" height="64" alt="">
+                                {% endfor %}
+                            </span>
+                            <span class="admin-choice__name">{{ choice.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.cardSet) }}
+            </fieldset>
+
+            <fieldset class="admin-settings__group">
+                <legend class="admin-settings__label">{{ form.cardBack.vars.label }}</legend>
+                <p class="admin-settings__help">Le dos des cartes, vu dans les mains des adversaires et pendant la donne.</p>
+                <div class="admin-settings__choices">
+                    {% for choice in form.cardBack %}
+                        {% set url = '' %}
+                        {% for item in enum_cases('App\\Enum\\CardBack') %}
+                            {% if item.value == choice.vars.value %}{% set url = asset(item.path) %}{% endif %}
+                        {% endfor %}
+                        <label class="admin-choice">
+                            {{ form_widget(choice, {attr: {class: 'admin-choice__input admin-choice__input--back visually-hidden', 'data-url': url}}) }}
+                            <span class="admin-choice__visual admin-choice__visual--cards admin-choice__visual--back">
+                                {% for i in 1..3 %}<img class="admin-choice__card" src="{{ url }}" width="46" height="64" alt="">{% endfor %}
+                            </span>
+                            <span class="admin-choice__name">{{ choice.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.cardBack) }}
+            </fieldset>
+
+            {# Solitaire : 5 minutes par manche, pas de durée de tour ni d'enchères #}
+            {% if game.hasTurns %}
+            <fieldset class="admin-settings__group">
+                <legend class="admin-settings__label">{{ form.turnSeconds.vars.label }}</legend>
+                <p class="admin-settings__help">Pendant le jeu : sans carte jouée dans ce temps, une carte est jouée automatiquement.</p>
+                <div class="admin-segmented">
+                    {% for choice in form.turnSeconds %}
+                        <label class="admin-segmented__option">
+                            {{ form_widget(choice, {attr: {class: 'admin-segmented__input visually-hidden'}}) }}
+                            <span class="admin-segmented__label">{{ choice.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.turnSeconds) }}
+            </fieldset>
+
+            {% if game.hasBidding %}
+            <fieldset class="admin-settings__group">
+                <legend class="admin-settings__label">{{ form.bidSeconds.vars.label }}</legend>
+                <p class="admin-settings__help">Aux enchères : sans réponse dans ce temps, le joueur passe automatiquement.</p>
+                <div class="admin-segmented">
+                    {% for choice in form.bidSeconds %}
+                        <label class="admin-segmented__option">
+                            {{ form_widget(choice, {attr: {class: 'admin-segmented__input visually-hidden'}}) }}
+                            <span class="admin-segmented__label">{{ choice.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.bidSeconds) }}
+            </fieldset>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        {{ form_errors(form) }}
+
+        <div class="admin-settings__actions">
+            <a class="admin__button admin__button--plain" href="{{ path('admin_game_settings', {game: game.value}) }}">Annuler</a>
+            <button class="admin__button" type="submit">Enregistrer</button>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

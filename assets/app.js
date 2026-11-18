@@ -16,3 +16,4 @@ if (document.querySelector('.form--validate')) {
 if (document.querySelector('.auth__panel--waiting, .auth__panel--confirmed')) {
     import('./js/AccountConfirmation.js').then(({ default: AccountConfirmation }) => AccountConfirmation.init());
 }
+

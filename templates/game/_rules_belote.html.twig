@@ -1,9 +1,13 @@
-{# Règles de la belote pour débutants, affichées dans l'onglet «&nbsp;Règles du jeu&nbsp;» de la page des salons #}
+{# Règles de la belote (règles GameDuell), affichées dans l'onglet «&nbsp;Règles du jeu&nbsp;» de la page des salons et dans la fenêtre des règles d'une table (variable « variant ») #}
 {% set cards = 'images/cartes/francais/moderne/' %}
 {% set trump = [['valet', 'Valet', 20], ['9', '9', 14], ['as', 'As', 11], ['10', '10', 10], ['roi', 'Roi', 4], ['dame', 'Dame', 3], ['8', '8', 0], ['7', '7', 0]] %}
 {% set plain = [['as', 'As', 11], ['10', '10', 10], ['roi', 'Roi', 4], ['dame', 'Dame', 3], ['valet', 'Valet', 2], ['9', '9', 0], ['8', '8', 0], ['7', '7', 0]] %}
+{% if in_dialog|default(false) %}
+<section class="rules rules--dialog">
+{% else %}
 <section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
-    <h2 id="regles-titre" class="visually-hidden">Règles de la belote</h2>
+{% endif %}
+    <h2 id="regles-titre" class="visually-hidden">Règles de la {{ (variant.label ?? 'belote')|lower }}</h2>
     <div class="rules__content">
 
     <div class="rules__intro">
@@ -45,20 +49,65 @@
         </article>
     {% endfor %}
 
-    <div class="rules__grid">
-        <article class="rules__box">
-            <h3 class="rules__heading rules__heading--small">Choisir l’atout</h3>
-            <p class="rules__text">Une carte est retournée. Chacun à son tour la prend (sa couleur devient l’atout) ou passe. Au 2e tour, on peut choisir une autre couleur.</p>
-        </article>
-        <article class="rules__box">
-            <h3 class="rules__heading rules__heading--small">Compter les points</h3>
-            <p class="rules__text">Une donne vaut 162 points, dont 10 pour le dernier pli. L’équipe qui a choisi l’atout doit faire plus que l’autre, sinon tous les points vont aux adversaires.</p>
-        </article>
+    {# Variante de la partie (dans la fenêtre des règles d'une table) ; page des salons : toutes les variantes #}
+    {% set variant = variant|default(null) %}
+    {% set contre = variant and variant.value == 'contree' ? {verb: 'contrer', over: 'surcontrer', done: 'contré', overdone: 'surcontré'} : {verb: 'coincher', over: 'surcoincher', done: 'coinché', overdone: 'surcoinché'} %}
+    {% set belote_box %}
         <article class="rules__box">
             <h3 class="rules__heading rules__heading--small">Belote, rebelote</h3>
-            <p class="rules__text">Le Roi et la Dame d’atout dans la même main : 20 points de plus. On les annonce en les jouant.</p>
+            <p class="rules__text">Le Roi et la Dame d’atout dans la même main : 20 points de plus, joués dans l’ordre de votre choix. Ils restent à l’équipe qui les a, même si elle chute.</p>
         </article>
-    </div>
+    {% endset %}
+    {% set auction_rules = [
+        {title: 'Les enchères', text: 'Chacun reçoit 8 cartes. À son tour, on passe ou on annonce un contrat avec une couleur d’atout : de 80 à 160 points, capot (250 : l’équipe fait tous les plis) ou générale (500 : un seul joueur fait tous les plis). Chaque annonce doit dépasser la précédente. Les adversaires peuvent ' ~ contre.verb ~ ' (contrat ×2), puis le preneur ' ~ contre.over ~ ' (×4). Si tout le monde passe, on redistribue.'},
+        {title: 'Compter les points', text: 'Le contrat est rempli si l’équipe qui a pris fait au moins son contrat et au moins 82 points (belote comprise) : chacun marque ses points, le preneur y ajoute le contrat. Sinon, la défense marque 162 + le contrat. ' ~ contre.done|capitalize ~ ' : le camp gagnant marque 2 fois le contrat (4 fois si ' ~ contre.overdone ~ ') en plus de ses points ou des 162, l’autre rien. Égalité : chacun marque ses points. Capot ou générale : le dernier pli vaut 100.'},
+    ] %}
+    {% if variant and variant.value == 'coinche' %}
+        {% set auction_rules = auction_rules|merge([
+            {title: 'Tout atout et sans atout', text: 'On peut aussi annoncer tout atout (TA) ou sans atout (SA). Tout atout : chaque couleur se joue comme l’atout (Valet 14, 9 9, As 6, 10 5, Roi 3, Dame 1), on fournit en montant si possible ; chaque Roi et Dame de la même couleur dans une main est une belote (20 points). Sans atout : As 19, 10 10, Roi 4, Dame 3, Valet 2, on fournit sans obligation de monter, et il n’y a pas de belote. Sans la couleur demandée, on joue ce qu’on veut. La donne vaut toujours 162 points.'},
+        ]) %}
+    {% endif %}
+
+    {% if variant and variant.hasAuction %}
+        {# Coinche : 4 encadrés, sur 2 colonnes #}
+        <div class="rules__grid{% if auction_rules|length > 2 %} rules__grid--two{% endif %}">
+            {% for rule in auction_rules %}
+                <article class="rules__box">
+                    <h3 class="rules__heading rules__heading--small">{{ rule.title }}</h3>
+                    <p class="rules__text">{{ rule.text }}</p>
+                </article>
+            {% endfor %}
+            {{ belote_box }}
+        </div>
+    {% else %}
+        <div class="rules__grid">
+            <article class="rules__box">
+                <h3 class="rules__heading rules__heading--small">Choisir l’atout</h3>
+                <p class="rules__text">Chacun reçoit 5 cartes et une carte est retournée. Chacun à son tour la prend (sa couleur devient l’atout) ou passe. Au 2e tour, on peut choisir une autre couleur ; si personne ne prend, on redistribue. Le preneur reçoit la carte retournée et 2 cartes, les autres 3.</p>
+            </article>
+            <article class="rules__box">
+                <h3 class="rules__heading rules__heading--small">Compter les points</h3>
+                <p class="rules__text">Une donne vaut 162 points, dont 10 pour le dernier pli. L’équipe qui a pris doit faire plus que l’autre (avec une belote : au moins 92 sur 182), sinon la défense marque 162. Égalité : l’équipe qui a pris perd ses points. Capot (tous les plis) : le dernier pli vaut 100, soit 252.</p>
+            </article>
+            {{ belote_box }}
+        </div>
+
+        {% if not variant %}
+            <details class="rules__box rules__more">
+                <summary class="rules__more-summary">
+                    <span class="rules__heading rules__heading--small rules__more-title">La coinche et la contrée <span class="rules__hint">enchères en points, 701 points à atteindre</span></span>
+                    <img class="rules__more-icon" src="{{ asset('images/icones/chevron-bas.svg') }}" width="20" height="20" alt="">
+                </summary>
+                <div class="rules__more-content">
+                    {% for rule in auction_rules %}
+                        <h3 class="rules__heading rules__heading--small">{{ rule.title }}</h3>
+                        <p class="rules__text">{{ rule.text }}</p>
+                    {% endfor %}
+                    <p class="rules__note">En contrée, on dit « contrer » et « surcontrer » au lieu de « coincher » et « surcoincher » ; le compte des points est le même.</p>
+                </div>
+            </details>
+        {% endif %}
+    {% endif %}
 
     <details class="rules__box rules__more">
         <summary class="rules__more-summary">
@@ -66,16 +115,16 @@
             <img class="rules__more-icon" src="{{ asset('images/icones/chevron-bas.svg') }}" width="20" height="20" alt="">
         </summary>
         <div class="rules__more-content">
-            <p class="rules__text">Au premier pli, avant de jouer sa carte, on peut annoncer une combinaison qu’on a en main. Seule l’équipe qui a la plus forte annonce marque ses points, en plus des points des plis.</p>
+            <p class="rules__text">Avant de jouer sa première carte, on peut déclarer les combinaisons qu’on a en main (le bouton apparaît en bas à droite). Elles sont montrées à tous à la fin du premier pli. Seule l’équipe qui a la meilleure annonce marque toutes les siennes ; elles comptent aussi pour savoir si le contrat est rempli.</p>
             <dl class="rules__announces">
-                <div class="rules__announce"><dt class="rules__announce-name">Tierce</dt><dd class="rules__announce-detail">3 cartes qui se suivent dans la même couleur (ex. : 7, 8, 9 de cœur)</dd><dd class="rules__announce-points">20</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Tierce</dt><dd class="rules__announce-detail">3 cartes qui se suivent dans la même couleur (ex. : Dame, Roi, As de cœur)</dd><dd class="rules__announce-points">20</dd></div>
                 <div class="rules__announce"><dt class="rules__announce-name">Cinquante</dt><dd class="rules__announce-detail">4 cartes qui se suivent dans la même couleur</dd><dd class="rules__announce-points">50</dd></div>
-                <div class="rules__announce"><dt class="rules__announce-name">Cent</dt><dd class="rules__announce-detail">5 cartes qui se suivent dans la même couleur</dd><dd class="rules__announce-points">100</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Cent</dt><dd class="rules__announce-detail">5 cartes ou plus qui se suivent dans la même couleur</dd><dd class="rules__announce-points">100</dd></div>
                 <div class="rules__announce"><dt class="rules__announce-name">Carré de Valets</dt><dd class="rules__announce-detail">les 4 Valets</dd><dd class="rules__announce-points">200</dd></div>
                 <div class="rules__announce"><dt class="rules__announce-name">Carré de 9</dt><dd class="rules__announce-detail">les 4 neuf</dd><dd class="rules__announce-points">150</dd></div>
                 <div class="rules__announce"><dt class="rules__announce-name">Autre carré</dt><dd class="rules__announce-detail">les 4 As, les 4 dix, les 4 Rois ou les 4 Dames (les 7 et les 8 ne comptent pas)</dd><dd class="rules__announce-points">100</dd></div>
             </dl>
-            <p class="rules__note">Ordre des cartes pour les suites : 7, 8, 9, 10, Valet, Dame, Roi, As. À égalité, la suite la plus haute gagne. La belote-rebelote compte toujours, avec ou sans annonces.</p>
+            <p class="rules__note">Ordre des cartes pour les suites : As, Roi, Dame, Valet, 10, 9, 8, 7. Une carte ne sert qu’à une seule annonce. À valeur égale, l’annonce à l’atout gagne ; sinon, à la belote, celle du joueur le plus proche du donneur, et à la coinche ou à la contrée, les annonces s’annulent. La belote-rebelote compte toujours, avec ou sans annonces.</p>
         </div>
     </details>
     </div>

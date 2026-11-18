@@ -1,0 +1,103 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Statistiques : Président{% if page > 1 %} (page {{ page }}){% endif %} | Administration Playora{% endblock %}
+
+{% block admin_id %}statistiques{% endblock %}
+
+{% block admin_body %}
+    <p class="admin__breadcrumb">Jeux › Président</p>
+    <h1 class="admin__title">Statistiques : Président</h1>
+
+    <section class="admin-stats" aria-labelledby="chiffres-titre">
+        <h2 class="visually-hidden" id="chiffres-titre">Chiffres généraux</h2>
+        <dl class="admin-stats__grid">
+            {% for item in [
+                {label: 'Parties terminées', value: summary.finished},
+                {label: 'Parties en cours', value: summary.playing},
+                {label: 'Parties avec robots', value: summary.withBots},
+                {label: 'Manches jouées', value: summary.rounds},
+            ] %}
+                <div class="admin-stats__item">
+                    <dt class="admin-stats__label">{{ item.label }}</dt>
+                    <dd class="admin-stats__value">{{ item.value }}</dd>
+                </div>
+            {% endfor %}
+        </dl>
+    </section>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="parties-titre">Parties</h2>
+
+        {% if rows is empty %}
+            <p class="admin-games__empty">Aucune partie pour l’instant.</p>
+        {% else %}
+            <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="parties-titre">
+                <table class="admin-games__table">
+                    <thead>
+                        <tr>
+                            {# Tri en base : chaque titre triable est un lien ; un 2e clic inverse l'ordre #}
+                            {% for column in [
+                                {key: 'numero', label: 'N°'},
+                                {key: 'debut', label: 'Début'},
+                                {key: null, label: 'Joueurs'},
+                                {key: null, label: 'Points'},
+                                {key: 'manches', label: 'Manches'},
+                                {key: 'etat', label: 'État'},
+                            ] %}
+                                {% set active = sort == column.key %}
+                                {% set next = active and direction == 'asc' ? 'desc' : 'asc' %}
+                                <th scope="col"{% if active %} aria-sort="{{ direction == 'asc' ? 'ascending' : 'descending' }}"{% endif %}>
+                                    {% if column.key is null %}
+                                        {{ column.label }}
+                                    {% else %}
+                                        <a class="admin-sort{% if active %} admin-sort--{{ direction }}{% endif %}" href="{{ path('admin_president_statistics', {tri: column.key, ordre: next}) }}">
+                                            {{ column.label }}<span class="admin-sort__arrow" aria-hidden="true"></span>
+                                        </a>
+                                    {% endif %}
+                                </th>
+                            {% endfor %}
+                            <th scope="col"><span class="visually-hidden">Détail</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            {% set president = row.game %}
+                            {% set room = president.room %}
+                            <tr>
+                                <td>{{ president.id }}</td>
+                                <td>{{ room.startedAt ? room.startedAt|date('d/m/Y H:i') : '–' }}</td>
+                                <td>
+                                    {% for player in row.players %}
+                                        {{- include('admin/jeu/_player.html.twig', {player: player}) }}{% if not loop.last %}, {% endif %}
+                                    {%- endfor %}
+                                </td>
+                                <td class="admin-games__score">{{ president.scores|join(' – ') }} <span class="admin-games__target">/ {{ president.goal }}</span></td>
+                                <td>{{ president.round }}</td>
+                                <td>
+                                    {% if room.finishedAt is null %}
+                                        <span class="admin-badge admin-badge--playing">En cours</span>
+                                    {% else %}
+                                        <span class="admin-badge">Gagné par {{ include('admin/jeu/_player.html.twig', {player: row.players[president.winnerPosition] ?? null}) }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><a class="admin-games__link" href="{{ path('admin_president_detail', {id: president.id}) }}">Détail<span class="visually-hidden"> de la partie {{ president.id }}</span></a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if pages > 1 %}
+                <nav class="admin-pager" aria-label="Pages des parties">
+                    {% if page > 1 %}
+                        <a class="admin-pager__link" href="{{ path('admin_president_statistics', {page: page - 1, tri: sort, ordre: direction}) }}" rel="prev">Précédentes</a>
+                    {% endif %}
+                    <span class="admin-pager__current">Page {{ page }} sur {{ pages }}</span>
+                    {% if page < pages %}
+                        <a class="admin-pager__link" href="{{ path('admin_president_statistics', {page: page + 1, tri: sort, ordre: direction}) }}" rel="next">Suivantes</a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        {% endif %}
+    </section>
+{% endblock %}

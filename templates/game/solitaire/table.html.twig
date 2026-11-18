@@ -1,0 +1,116 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Partie de solitaire | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Votre partie de solitaire en cours sur Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'solitaire']) }}{% endblock %}
+
+{% block main_id %}partie{% endblock %}
+
+{# Pendant une partie, pas d'en-tête du site (ni menu, ni déconnexion) : la table prend tout l'écran #}
+{% block site_header %}{% endblock %}
+
+{% block body %}
+    <main id="partie" class="game-table belote solitaire solitaire--bois belote--{{ room.carpet.value }}"
+          data-view="{{ view|json_encode }}"
+          data-api-url="{{ path('api_solitaire_game', {id: game.id}) }}"
+          data-hub-url="{{ mercure(topic) }}"
+          data-csrf="{{ csrf_token('submit') }}"
+          data-cards-url="{{ asset(room.cardSet.path) }}"
+          data-back-url="{{ asset(room.cardBack.path) }}"
+          data-leave-url="{{ path('api_solitaire_leave', {id: game.id}) }}"
+          data-lobby-url="{{ path('app_duel_result', {id: room.id}) }}">
+        <h1 class="visually-hidden">Partie de {{ room.game.label|lower }}</h1>
+
+        <div class="belote__frame solitaire__frame">
+            {# Comme au solitaire des sites de jeux : « Retour » à gauche, le ticket du score et du temps au centre, les outils à droite #}
+            <header class="belote__toolbar solitaire__toolbar">
+                <button class="solitaire__undo" type="button" disabled>
+                    <img src="{{ asset('images/icones/avatar-retour.svg') }}" width="14" height="14" alt="">Retour <span class="solitaire__undo-cost">−1 000</span>
+                </button>
+
+                <div class="solitaire__ticket">
+                    <p class="solitaire__score">Score <b class="solitaire__score-value">0</b></p>
+                    {# Temps de la manche : la jauge, dans le ticket, se vide en 5 minutes #}
+                    <div class="solitaire__clock" role="timer" aria-label="Temps restant">
+                        <span class="solitaire__clock-label" aria-hidden="true">Temps</span>
+                        <img class="solitaire__clock-icon" src="{{ asset('images/icones/sablier.svg') }}" width="16" height="16" alt="">
+                        <span class="solitaire__clock-text">5:00</span>
+                        <span class="solitaire__clock-bar" aria-hidden="true"><span class="solitaire__clock-fill"></span></span>
+                    </div>
+                </div>
+
+                <div class="belote__tools solitaire__tools">
+{{ include('game/_sound_button.html.twig') }}
+                    <button class="belote__tool belote__tool--rules" type="button" title="Règles du jeu">
+                        <img src="{{ asset('images/icones/regles.svg') }}" width="18" height="18" alt=""><span class="visually-hidden">Règles du jeu</span>
+                    </button>
+                    <button class="belote__tool belote__tool--fullscreen" type="button" title="Plein écran">
+                        <img src="{{ asset('images/icones/plein-ecran.svg') }}" width="18" height="18" alt=""><span class="visually-hidden">Plein écran</span>
+                    </button>
+                    <button class="belote__quit" type="button">Quitter</button>
+                </div>
+            </header>
+
+            <div class="belote__felt solitaire__felt">
+                {# Talon et cartes retournées, puis les quatre familles #}
+                <section class="solitaire__top" aria-label="Talon et familles">
+                    <button class="solitaire__stock" type="button" aria-label="Talon : retourner une carte"></button>
+                    <div class="solitaire__waste" role="group" aria-label="Cartes retournées"></div>
+                    <ol class="solitaire__foundations" aria-label="Familles">
+                        {# Chaque case porte le symbole de sa couleur, gravé dans le bois #}
+                        {% for suit, sign in {pique: '♠', coeur: '♥', carreau: '♦', trefle: '♣'} %}
+                            <li class="solitaire__foundation" data-suit="{{ suit }}"><span class="solitaire__foundation-mark" aria-hidden="true">{{ sign }}</span></li>
+                        {% endfor %}
+                    </ol>
+                </section>
+
+                <ol class="solitaire__tableau" aria-label="Piles de tri">
+                    {% for column in 0..6 %}
+                        <li class="solitaire__column" data-column="{{ column }}"></li>
+                    {% endfor %}
+                </ol>
+
+                <div class="solitaire__drag" aria-hidden="true"></div>
+
+                <p class="belote__toast" role="status"></p>
+
+                {# Début de la partie, attente des autres joueurs, résultats #}
+                <section class="solitaire__overlay" aria-live="polite">
+                    <div class="solitaire__panel">
+                        <h2 class="solitaire__panel-title"></h2>
+                        <p class="solitaire__panel-text"></p>
+                        {# Résultat final : le détail de son score et son total (le classement du duel est sur la page suivante) #}
+                        <dl class="solitaire__details"></dl>
+                        <p class="solitaire__total"></p>
+                        {# Vers « Mes duels » (le tableau des résultats) : tout seul au bout de 30 secondes #}
+                        <a class="belote__end-link solitaire__panel-link" href="{{ path('app_duel_result', {id: room.id}) }}">Continuer</a>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <dialog class="belote__rules" aria-labelledby="regles-partie-titre">
+            <div class="belote__rules-head">
+                <h2 id="regles-partie-titre" class="belote__rules-title">Règles du solitaire</h2>
+                <button class="belote__rules-close" type="button">Fermer</button>
+            </div>
+            {% include 'game/_rules_solitaire.html.twig' with {in_dialog: true, draw: room.game.solitaireDraw} %}
+        </dialog>
+
+        {# Quitter la partie en cours (bouton « Quitter » ou flèche « précédent » du navigateur) : elle s’arrête là, au score du moment #}
+        <dialog class="belote__leave solitaire__leave-dialog" aria-labelledby="quitter-titre" aria-describedby="quitter-texte">
+            <h2 id="quitter-titre" class="belote__leave-title">Quitter la partie ?</h2>
+            <p id="quitter-texte" class="belote__leave-text">Votre partie s’arrête là, avec le score que vous avez maintenant, plus 1 point par seconde qui reste. Vous ne pourrez pas la reprendre.</p>
+            <p class="belote__leave-error" role="alert"></p>
+            <div class="belote__leave-actions">
+                <button class="belote__leave-stay solitaire__leave-cancel" type="button">Rester</button>
+                <button class="belote__leave-confirm solitaire__leave-confirm" type="button">Quitter la partie</button>
+            </div>
+        </dialog>
+    </main>
+{% endblock %}

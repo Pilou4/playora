@@ -1,0 +1,94 @@
+{# Règles du tarot (Fédération française de tarot, comme sur GameDuell) : page des salons et fenêtre des règles d'une table #}
+{% if in_dialog|default(false) %}
+<section class="rules rules--dialog">
+{% else %}
+<section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
+{% endif %}
+    <h2 id="regles-titre" class="visually-hidden">Règles du tarot</h2>
+    <div class="rules__content">
+
+    <div class="rules__intro">
+        <article class="rules__summary">
+            <h3 class="rules__heading rules__heading--large">Le tarot en 30 secondes</h3>
+            <p class="rules__summary-text">De 3 à 5 joueurs. Après les enchères, le <strong>preneur</strong> joue contre les autres (à 5, avec le partenaire qu’il appelle). Les 21 atouts battent toutes les couleurs. Le preneur doit faire assez de points dans ses plis : 56, 51, 41 ou 36 selon qu’il a 0, 1, 2 ou 3 <strong>bouts</strong> (le Petit, le 21 et l’Excuse).</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading">Ce qu’on doit jouer</h3>
+            <ol class="rules__steps">
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">1</span>
+                    <div><p class="rules__step-title">Fournir la couleur</p><p class="rules__text">Sans obligation de monter.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">2</span>
+                    <div><p class="rules__step-title">Sinon, couper</p><p class="rules__text">Avec un atout plus fort que ceux déjà posés si possible, sinon un plus petit. Ni couleur ni atout : n’importe quelle carte.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">3</span>
+                    <div><p class="rules__step-title">À l’atout, monter</p><p class="rules__text">L’Excuse se joue à tout moment : elle ne gagne pas le pli mais reste à son camp.</p></div>
+                </li>
+            </ol>
+        </article>
+    </div>
+
+    <article class="rules__box">
+        <h3 class="rules__heading rules__heading--medium">Valeur des cartes</h3>
+        <dl class="rules__announces">
+            <div class="rules__announce"><dt class="rules__announce-name">Bouts</dt><dd class="rules__announce-detail">le Petit (atout 1), le 21 et l’Excuse</dd><dd class="rules__announce-points">4,5</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Roi</dt><dd class="rules__announce-detail">dans chaque couleur</dd><dd class="rules__announce-points">4,5</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Dame</dt><dd class="rules__announce-detail">dans chaque couleur</dd><dd class="rules__announce-points">3,5</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Cavalier</dt><dd class="rules__announce-detail">dans chaque couleur</dd><dd class="rules__announce-points">2,5</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Valet</dt><dd class="rules__announce-detail">dans chaque couleur</dd><dd class="rules__announce-points">1,5</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Autres cartes</dt><dd class="rules__announce-detail">de 1 à 10 dans les couleurs, atouts de 2 à 20</dd><dd class="rules__announce-points">0,5</dd></div>
+        </dl>
+        <p class="rules__note">91 points en tout. L’ordre des couleurs : Roi, Dame, Cavalier, Valet, 10… 1 ; des atouts : 21 au 1.</p>
+    </article>
+
+    <div class="rules__grid">
+        <article class="rules__box">
+            <h3 class="rules__heading rules__heading--small">Les enchères</h3>
+            <p class="rules__text">Chacun parle une fois : passe, ou plus fort que l’enchère en cours. Petite (×1), garde (×2), garde sans le chien (×4), garde contre le chien (×6). Si personne ne prend, on redistribue.</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading rules__heading--small">Le chien</h3>
+            <p class="rules__text">Petite et garde : le chien est montré, le preneur le prend et écarte 6 cartes (ni Roi ni bout ; des atouts seulement s’il le faut, et ils sont montrés). Garde sans : le chien compte pour le preneur sans être vu ; garde contre : pour la défense.</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading rules__heading--small">Compter les points</h3>
+            <p class="rules__text">(25 + l’écart avec les points à faire) × le coefficient. Chaque défenseur perd ce total une fois, le preneur le gagne (ou l’inverse s’il chute).</p>
+        </article>
+    </div>
+
+    <details class="rules__box rules__more">
+        <summary class="rules__more-summary">
+            <span class="rules__heading rules__heading--small rules__more-title">À 3, 4 ou 5 joueurs <span class="rules__hint">cartes, chien, poignées, points</span></span>
+            <img class="rules__more-icon" src="{{ asset('images/icones/chevron-bas.svg') }}" width="20" height="20" alt="">
+        </summary>
+        <div class="rules__more-content">
+            <dl class="rules__announces">
+                <div class="rules__announce"><dt class="rules__announce-name">3 joueurs</dt><dd class="rules__announce-detail">24 cartes chacun, 6 au chien ; poignées de 13, 15 et 18 atouts ; le preneur marque 2 fois la donne</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">4 joueurs</dt><dd class="rules__announce-detail">18 cartes chacun, 6 au chien ; poignées de 10, 13 et 15 atouts ; le preneur marque 3 fois la donne</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">5 joueurs</dt><dd class="rules__announce-detail">15 cartes chacun, 3 au chien ; poignées de 8, 10 et 13 atouts. Le preneur appelle un Roi : celui qui l’a joue avec lui sans le dire, jusqu’à ce que le Roi sorte. Le preneur marque 2 fois la donne et son partenaire 1 fois (4 fois s’il joue seul)</dd></div>
+            </dl>
+        </div>
+    </details>
+
+    <details class="rules__box rules__more">
+        <summary class="rules__more-summary">
+            <span class="rules__heading rules__heading--small rules__more-title">Poignée, Petit au bout, chelem <span class="rules__hint">les primes</span></span>
+            <img class="rules__more-icon" src="{{ asset('images/icones/chevron-bas.svg') }}" width="20" height="20" alt="">
+        </summary>
+        <div class="rules__more-content">
+            <dl class="rules__announces">
+                <div class="rules__announce"><dt class="rules__announce-name">Poignée simple</dt><dd class="rules__announce-detail">10 atouts à 4 joueurs, montrés avant sa première carte (l’Excuse peut en remplacer un) ; la prime va au camp qui gagne la donne</dd><dd class="rules__announce-points">20</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Poignée double</dt><dd class="rules__announce-detail">13 atouts</dd><dd class="rules__announce-points">30</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Poignée triple</dt><dd class="rules__announce-detail">15 atouts</dd><dd class="rules__announce-points">40</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Petit au bout</dt><dd class="rules__announce-detail">le Petit dans le dernier pli : au camp qui fait ce pli, multiplié par le coefficient</dd><dd class="rules__announce-points">10</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Chelem annoncé et fait</dt><dd class="rules__announce-detail">tous les plis ; le preneur l’annonce avant la première carte et entame</dd><dd class="rules__announce-points">400</dd></div>
+                <div class="rules__announce"><dt class="rules__announce-name">Chelem fait sans annonce</dt><dd class="rules__announce-detail">annoncé mais raté : 200 de pénalité</dd><dd class="rules__announce-points">200</dd></div>
+            </dl>
+            <p class="rules__note">L’Excuse reste au camp qui l’a jouée, contre une carte de 0,5 point donnée au camp qui a fait le pli. Petit sec (le Petit seul atout, sans l’Excuse) : la donne est annulée.</p>
+        </div>
+    </details>
+    </div>
+</section>

@@ -1,0 +1,98 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Partie n° {{ tarot.id }} : Tarot | Administration Playora{% endblock %}
+
+{% block admin_id %}partie{% endblock %}
+
+{% block admin_body %}
+    {% set room = tarot.room %}
+    {% set places = 1..room.playerCount %}
+
+    <p class="admin__breadcrumb"><a class="admin__back" href="{{ path('admin_tarot_statistics') }}">Statistiques</a> › Partie n° {{ tarot.id }}</p>
+    <h1 class="admin__title">Partie n° {{ tarot.id }}</h1>
+
+    <dl class="admin-stats__grid admin-stats__grid--small">
+        {% for item in [
+            {label: 'Début', value: room.startedAt ? room.startedAt|date('d/m/Y H:i') : '–'},
+            {label: 'Joueurs', value: room.playerCount},
+            {label: 'Partie en', value: room.targetPoints ~ ' donnes'},
+            {label: 'Durée d’un tour', value: room.turnSeconds ~ ' s'},
+            {label: 'Pour les enchères', value: room.bidSeconds ~ ' s'},
+            {label: 'État', value: tarot.winnerPosition is null ? 'En cours' : 'Terminée'},
+        ] %}
+            <div class="admin-stats__item">
+                <dt class="admin-stats__label">{{ item.label }}</dt>
+                <dd class="admin-stats__value">{{ item.value }}</dd>
+            </div>
+        {% endfor %}
+    </dl>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="joueurs-titre">Joueurs</h2>
+        <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="joueurs-titre">
+            <table class="admin-games__table admin-sortable">
+                <thead>
+                    <tr>
+                        {% for label in ['Place', 'Joueur', 'Score', 'Contrats pris', 'Contrats remplis', 'Résultat'] %}
+                            <th scope="col"><button class="admin-sort" type="button">{{ label }}<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                        <tr>
+                            <td>{{ player.position }}</td>
+                            <td>{{ include('admin/jeu/_player.html.twig', {player: player}) }}</td>
+                            <td>{{ player.teamScore }}</td>
+                            <td>{{ player.contractsTaken }}</td>
+                            <td>{{ player.contractsMade }}</td>
+                            <td>{{ player.hasWon is null ? '–' : (player.hasWon ? 'Gagné' : 'Perdu') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="donnes-titre">Donnes</h2>
+
+        {% if deals is empty %}
+            <p class="admin-games__empty">Aucune donne terminée pour l’instant.</p>
+        {% else %}
+            <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="donnes-titre">
+                <table class="admin-games__table admin-sortable">
+                    <thead>
+                        <tr>
+                            {% for label in ['N°', 'Donneur', 'Preneur', 'Contrat', 'Résultat', 'Points du preneur', 'Bouts', 'Valeur', 'Petit au bout', 'Chelem'] %}
+                                <th scope="col"><button class="admin-sort" type="button">{{ label }}<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            {% endfor %}
+                            {% for place in places %}
+                                <th scope="col"><button class="admin-sort" type="button">Place {{ place }}<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deal in deals %}
+                            <tr>
+                                <td>{{ deal.number }}</td>
+                                <td>{{ include('admin/jeu/_player.html.twig', {player: players[deal.dealer] ?? null}) }}</td>
+                                <td>{{ include('admin/jeu/_player.html.twig', {player: players[deal.taker] ?? null}) }}</td>
+                                <td>{{ deal.contract.label }}</td>
+                                <td><span class="admin-badge admin-badge--{{ deal.made ? 'reussi' : 'chute' }}">{{ deal.made ? 'Rempli' : 'Chuté' }}</span></td>
+                                <td>{{ deal.takerPoints|number_format(1, ',')|replace({',0': ''}) }}</td>
+                                <td>{{ deal.bouts }}</td>
+                                <td>{{ deal.value }}</td>
+                                <td>{{ {1: 'Preneur', 2: 'Défense'}[deal.petitAuBout] ?? '–' }}</td>
+                                <td>{{ deal.chelem ? 'Oui' : '–' }}</td>
+                                {% for place in places %}
+                                    <td>{{ deal.scored[place - 1] ?? 0 }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

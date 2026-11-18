@@ -1,0 +1,90 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Partie n° {{ patience.id }} : {{ game.label }} | Administration Playora{% endblock %}
+
+{% block admin_id %}partie{% endblock %}
+
+{% block admin_body %}
+    {% set room = patience.room %}
+
+    <p class="admin__breadcrumb"><a class="admin__back" href="{{ path('admin_patience_statistics', {game: game.value}) }}">Statistiques</a> › Partie n° {{ patience.id }}</p>
+    <h1 class="admin__title">Partie n° {{ patience.id }}</h1>
+
+    <dl class="admin-stats__grid admin-stats__grid--small">
+        {% for item in [
+            {label: 'Début', value: room.startedAt ? room.startedAt|date('d/m/Y H:i') : '–'},
+            {label: 'Manches', value: patience.round ~ ' / ' ~ patience.rounds},
+            {label: 'Par manche', value: '5 min'},
+            {label: 'État', value: not patience.finished ? 'En cours' : (patience.winnerPosition is null ? 'Égalité' : 'Terminé')},
+        ] %}
+            <div class="admin-stats__item">
+                <dt class="admin-stats__label">{{ item.label }}</dt>
+                <dd class="admin-stats__value">{{ item.value }}</dd>
+            </div>
+        {% endfor %}
+    </dl>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="joueurs-titre">Joueurs</h2>
+        <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="joueurs-titre">
+            <table class="admin-games__table admin-sortable">
+                <thead>
+                    <tr>
+                        {% for label in ['Place', 'Joueur', 'Total', 'Résultat'] %}
+                            <th scope="col"><button class="admin-sort" type="button">{{ label }}<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in players %}
+                        <tr>
+                            <td>{{ player.position }}</td>
+                            <td>{{ include('admin/jeu/_player.html.twig', {player: player}) }}</td>
+                            <td data-sort="{{ player.teamScore }}">{{ player.teamScore|number_format(0, ',', ' ') }}</td>
+                            <td>{{ player.hasWon is null ? '–' : (player.hasWon ? 'Gagné' : 'Perdu') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-games">
+        <h2 class="admin__subtitle" id="manches-titre">Manches</h2>
+        <div class="admin-games__scroll" tabindex="0" role="region" aria-labelledby="manches-titre">
+            <table class="admin-games__table admin-sortable">
+                <thead>
+                    <tr>
+                        {% for label in ['Manche', 'Joueur', 'Score', 'Cartes rangées', 'Temps joué', 'Fin'] %}
+                            <th scope="col"><button class="admin-sort" type="button">{{ label }}<span class="admin-sort__arrow" aria-hidden="true"></span></button></th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for number, boards in rounds %}
+                        {% for grid in boards %}
+                            {% set board = grid.board %}
+                            {% set played = board.secondsPlayed %}
+                            <tr>
+                                <td>{{ number }}</td>
+                                <td>{{ include('admin/jeu/_player.html.twig', {player: players[board.position + 1] ?? null}) }}</td>
+                                <td data-sort="{{ board.score }}">{{ board.score|number_format(0, ',', ' ') }}</td>
+                                <td data-sort="{{ grid.sorted }}">{{ grid.sorted }} / {{ grid.cards }}</td>
+                                <td data-sort="{{ played ?? -1 }}">{{ played is null ? '–' : (played // 60) ~ ':' ~ '%02d'|format(played % 60) }}</td>
+                                <td>
+                                    {% if not board.finished %}
+                                        <span class="admin-badge admin-badge--playing">En cours</span>
+                                    {% elseif board.complete %}
+                                        <span class="admin-badge admin-badge--reussi">Tout rangé</span>
+                                    {% else %}
+                                        <span class="admin-badge">Terminée</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,310 @@
+/* ==========================================================================
+   Spider (disposition A : barre du bas). Le cadre, le temps, le score, les fenêtres
+   et les cartes viennent de belote.css et solitaire.css ; ici, les dix piles et la barre du bas.
+   ========================================================================== */
+
+.spider__frame {
+    --card-w: 6.3cqw;
+    --gap: 1.2cqw;
+    --edge: 2.4cqw;
+    /* Barre du bas : des cartes plus petites */
+    --bar-card-w: 4.6cqw;
+    --bar-card-h: calc(var(--bar-card-w) * 1.4);
+    --bar-h: calc(var(--bar-card-h) + 3.4cqw);
+}
+
+/* ---------- Les dix piles de cartes ---------- */
+
+.spider__tableau {
+    position: absolute;
+    top: 2cqw;
+    bottom: calc(var(--bar-h) + 1.4cqw);
+    /* Les dix piles au centre du tapis */
+    left: max(var(--edge), calc(50% - (10 * var(--card-w) + 9 * var(--gap)) / 2));
+    display: grid;
+    grid-template-columns: repeat(10, var(--card-w));
+    gap: var(--gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.spider .solitaire__column,
+.spider .solitaire__column::before {
+    border-radius: 0.6cqw;
+}
+
+/* ---------- Barre du bas ---------- */
+
+.spider__bar {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 3cqw;
+    height: var(--bar-h);
+    padding: 0 var(--edge);
+    border-top: 0.15cqw solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.32));
+}
+
+.spider__foundations,
+.spider__joker-list,
+.spider__stock {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Familles rangées : 8 places qui se chevauchent */
+.spider__foundation,
+.spider__joker {
+    position: relative;
+    flex: none;
+    width: var(--bar-card-w);
+    height: var(--bar-card-h);
+    border: 0.15cqw dashed rgba(255, 255, 255, 0.4);
+    border-radius: 0.5cqw;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.spider__foundation + .spider__foundation {
+    margin-left: calc(var(--bar-card-w) * -0.62);
+}
+
+.spider__foundation .solitaire__card,
+.spider__joker .solitaire__card {
+    position: absolute;
+    inset: -0.15cqw;
+    width: calc(100% + 0.3cqw);
+}
+
+/* Joker : une carte à la fois par pile */
+.spider__jokers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4cqw;
+}
+
+.spider__jokers-label {
+    margin: 0;
+    color: #ffd23f;
+    font: 800 min(1cqw, 12px) var(--font-display);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.spider__joker-list {
+    gap: 0.8cqw;
+}
+
+.spider__joker {
+    border-color: #ffd23f;
+    transition: box-shadow 0.15s ease;
+}
+
+/* Piles talon : un dos et la première carte, à droite de la barre */
+.spider__stock {
+    gap: 1cqw;
+    margin-left: auto;
+}
+
+.spider__pile {
+    position: relative;
+    display: block;
+    width: var(--bar-card-w);
+    height: var(--bar-card-h);
+    padding: 0;
+    border: 0;
+    border-radius: 0.5cqw;
+    background: none;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.spider__pile:hover:not(:disabled) {
+    transform: translateY(-0.4cqw);
+}
+
+.spider__pile:disabled {
+    cursor: default;
+}
+
+.spider__pile:focus-visible {
+    outline: 0.3cqw solid #ffd23f;
+    outline-offset: 0.15cqw;
+}
+
+.spider__pile--empty {
+    border: 0.15cqw dashed rgba(255, 255, 255, 0.3);
+}
+
+.spider__pile .solitaire__card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+/* La première carte dépasse du dos : on voit ce qui partira sur la première pile */
+.spider__pile-top {
+    transform: translateY(18%);
+}
+
+/* Pro : la pile entière, au-dessus de la barre, le temps du survol */
+.spider__peek {
+    position: absolute;
+    right: var(--edge);
+    bottom: calc(100% + 0.8cqw);
+    display: flex;
+    padding: 0.8cqw;
+    border-radius: 0.8cqw;
+    background: rgba(8, 30, 32, 0.85);
+    box-shadow: 0 0.8cqw 2cqw rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+}
+
+.spider__peek--visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.15s ease;
+}
+
+.spider__peek .solitaire__card {
+    width: var(--bar-card-w);
+}
+
+.spider__peek .solitaire__card + .solitaire__card {
+    margin-left: calc(var(--bar-card-w) * -0.55);
+}
+
+/* ---------- Téléphone ---------- */
+
+@media (max-width: 640px) {
+    .spider__frame {
+        --card-w: calc((100cqw - 16px - 9 * 3px) / 10);
+        --gap: 3px;
+        --edge: 8px;
+        --bar-card-w: 30px;
+        --bar-h: calc(var(--bar-card-h) + 20px);
+    }
+
+    /* Piles en haut, puis la barre, puis les joueurs sur une ligne */
+    .spider__tableau {
+        top: 8px;
+        bottom: calc(var(--bar-h) + 96px);
+    }
+
+    .spider__bar {
+        bottom: 88px;
+        gap: 10px;
+        border-top: 0;
+        border-radius: 10px;
+        margin: 0 6px;
+    }
+
+    .spider .solitaire__column,
+    .spider .solitaire__column::before,
+    .spider__foundation,
+    .spider__joker,
+    .spider__pile {
+        border-radius: 3px;
+    }
+
+    .spider__foundation + .spider__foundation {
+        margin-left: -24px;
+    }
+
+    .spider__jokers {
+        gap: 2px;
+    }
+
+    .spider__jokers-label {
+        font-size: 9px;
+    }
+
+    .spider__joker-list,
+    .spider__stock {
+        gap: 4px;
+    }
+
+    .spider__peek {
+        right: 0;
+        padding: 6px;
+    }
+}
+
+/* Famille complète : ses cartes volent vers la barre (SpiderTable.js) ; sa place attend la dernière */
+.spider__flight {
+    position: fixed;
+    top: var(--y);
+    left: var(--x);
+    z-index: 60;
+    width: var(--w);
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+
+.spider__foundation--filling .solitaire__card {
+    visibility: hidden;
+}
+
+/* ---------- Habillage bois (comme le solitaire) : la barre du bas fait partie du plateau ---------- */
+
+.solitaire--bois .spider__bar {
+    border-top: 0.15cqw solid rgba(255, 220, 180, 0.14);
+    border-radius: 0 0 2cqw 2cqw;
+    background: linear-gradient(rgba(60, 25, 8, 0.18), rgba(40, 15, 4, 0.34));
+}
+
+/* Les places creusées dans le bois : familles rangées, pile talon vide */
+.solitaire--bois .spider__foundation,
+.solitaire--bois .spider__pile--empty {
+    border: 0;
+    background: rgba(60, 25, 8, 0.28);
+    box-shadow: inset 0 0.3cqw 0.8cqw rgba(30, 10, 2, 0.55), inset 0 -1px 0 rgba(255, 220, 180, 0.2);
+}
+
+.solitaire--bois .spider__joker {
+    border-color: rgba(255, 210, 63, 0.8);
+    background: rgba(60, 25, 8, 0.22);
+}
+
+.solitaire--bois .spider__peek {
+    background: rgba(40, 15, 4, 0.9);
+}
+
+@media (max-width: 640px) {
+    /* Dix piles sur la largeur du plateau (le solitaire en a sept) */
+    .solitaire--bois .spider__frame {
+        --card-w: calc((100cqw - 24px - 9 * 3px) / 10);
+        --gap: 3px;
+        --edge: 6px;
+    }
+
+    .solitaire--bois .spider__tableau {
+        top: 8px;
+        bottom: calc(var(--bar-h) + 10px);
+    }
+
+    .solitaire--bois .spider__bar {
+        bottom: 0;
+        margin: 0;
+        border-radius: 0 0 14px 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spider__pile,
+    .spider__joker,
+    .spider__peek {
+        transition: none;
+    }
+}

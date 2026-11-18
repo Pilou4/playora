@@ -1,0 +1,138 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ finished ? 'Mes parties terminées' : 'Mes parties en cours' }} | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Vos parties de solitaire, Spider, FreeCell, Pyramide et Golf solitaire sur Playora : en cours et terminées, avec le classement et les points de chacun.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'games']) }}{% endblock %}
+
+{% block main_id %}mes-parties{% endblock %}
+
+{% block body %}
+    {# Une carte pour reconnaître chaque jeu d'un coup d'œil (les mêmes que dans la liste des jeux) #}
+    {% set cards = {
+        'solitaire': 'coeur/as',
+        'solitaire-harmonie': 'carreau/as',
+        'spider-debutant': 'pique/10',
+        'spider': 'coeur/dame',
+        'spider-pro': 'carreau/roi',
+        'freecell': 'trefle/valet',
+        'pyramide': 'coeur/roi',
+        'golf-solitaire': 'pique/7',
+        'belote': 'carreau/valet',
+        'coinche': 'carreau/10',
+        'contree': 'trefle/as',
+        'tarot': 'pique/as',
+        'rami': 'coeur/7',
+        'huit-americain': 'pique/8',
+        'golf': 'pique/2',
+        'president': 'coeur/2',
+    } %}
+    {# Jeux en équipes : 2 contre 2 #}
+    {% set teams = ['belote', 'coinche', 'contree'] %}
+    <main id="mes-parties" class="duels">
+        <h1 class="duels__title">Mes parties</h1>
+
+        {# Deux onglets, comme deux pages : en cours, terminées #}
+        <nav class="duels__tabs" aria-label="Mes parties">
+            <a class="duels__tab{% if not finished %} duels__tab--active{% endif %}" href="{{ path('app_my_duels') }}"{% if not finished %} aria-current="page"{% endif %}>
+                En cours <span class="duels__tab-count">{{ counts.playing }}</span>
+            </a>
+            <a class="duels__tab{% if finished %} duels__tab--active{% endif %}" href="{{ path('app_my_duels_finished') }}"{% if finished %} aria-current="page"{% endif %}>
+                Terminées <span class="duels__tab-count">{{ counts.finished }}</span>
+            </a>
+        </nav>
+
+        <p class="duels__lead">
+            {{- finished
+                ? 'Vos parties terminées, du plus récent au plus ancien.'
+                : 'Vos parties commencées et pas encore finies. Dans un duel solo, les scores des autres apparaissent quand votre partie est finie.' -}}
+        </p>
+
+        {% if rows is empty %}
+            <p class="duels__empty">{{ finished ? 'Aucune partie terminée.' : 'Aucune partie en cours.' }}</p>
+        {% else %}
+            <div class="duels__box">
+                <table class="duels__table">
+                    <caption class="visually-hidden">{{ finished ? 'Vos parties terminées' : 'Vos parties en cours' }}, avec le classement et les points de chacun</caption>
+                    <thead>
+                        <tr>
+                            <th class="duels__head" scope="col">Jeu</th>
+                            <th class="duels__head" scope="col">{{ finished ? 'Fin' : 'Début' }}</th>
+                            <th class="duels__head" scope="col">Type de partie</th>
+                            <th class="duels__head" scope="col">Classement</th>
+                            <th class="duels__head duels__head--points" scope="col">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            {% set room = row.room %}
+                            {% set date = finished ? (room.finishedAt ?? room.createdAt) : room.createdAt %}
+                            <tr class="duels__row{% if room.id == highlight %} duels__row--highlight{% endif %}">
+                                <td class="duels__cell">
+                                    <div class="duels__game">
+                                        <img class="duels__card" src="{{ asset('images/cartes/francais/moderne/' ~ (cards[row.game] ?? 'coeur/as') ~ '.svg') }}" width="250" height="350" alt="">
+                                        <div>
+                                            <a class="duels__game-name" href="{{ path('app_game_lobby', {game: row.game}) }}">{{ row.gameLabel }}</a>
+                                            {% if row.solo %}
+                                                <a class="duels__ref" href="{{ path('app_duel_result', {id: room.id}) }}">Duel n° {{ room.id }}<span class="visually-hidden"> : voir le résultat</span></a>
+                                            {% else %}
+                                                <span class="duels__ref">Partie n° {{ room.id }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="duels__cell duels__cell--date">
+                                    <time datetime="{{ date|date('c') }}">{{ date|date('d/m/y') }} <span class="duels__time">{{ date|date('H:i') }}</span></time>
+                                </td>
+                                <td class="duels__cell duels__cell--type">{{ row.game in teams ? '2 contre 2' : room.playerCount ~ ' joueurs' }}</td>
+                                {# Classement et points sur les mêmes lignes, comme deux colonnes d'une même liste #}
+                                <td class="duels__cell duels__cell--ranking">
+                                    <ol class="duels__list">
+                                        {% for player in row.ranking %}
+                                            <li class="duels__player{% if player.me %} duels__player--me{% endif %}{% if player.state == 'libre' %} duels__player--free{% endif %}">
+                                                {{- player.state == 'libre' ? 'Place libre' : player.pseudo -}}
+                                            </li>
+                                        {% endfor %}
+                                    </ol>
+                                    {% if not row.mineFinished %}
+                                        <a class="duels__resume" href="{{ path('app_game_play', {game: row.game, id: room.id}) }}">Reprendre ma partie</a>
+                                    {% endif %}
+                                </td>
+                                <td class="duels__cell duels__cell--points">
+                                    <ol class="duels__list" aria-label="Points">
+                                        {% for player in row.ranking %}
+                                            <li class="duels__points{% if player.me %} duels__points--me{% endif %}">
+                                                {%- if player.score is not null -%}
+                                                    {{ player.score|number_format(0, ',', ' ') }}
+                                                {%- elseif player.state == 'en-cours' -%}
+                                                    <span class="duels__playing">joue<span class="duels__dots" aria-hidden="true"><span class="duels__dot"></span><span class="duels__dot"></span><span class="duels__dot"></span></span></span>
+                                                {%- elseif player.state == 'fini' -%}
+                                                    <span class="duels__muted">caché</span>
+                                                {%- else -%}
+                                                    <span class="duels__muted">–</span>
+                                                {%- endif -%}
+                                            </li>
+                                        {% endfor %}
+                                    </ol>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if pages > 1 %}
+                {% set route = finished ? 'app_my_duels_finished' : 'app_my_duels' %}
+                <nav class="duels__pager" aria-label="Pages">
+                    {% if page > 1 %}<a class="duels__pager-link" href="{{ path(route, {page: page - 1}) }}">Plus récentes</a>{% endif %}
+                    <span class="duels__pager-current">Page {{ page }} sur {{ pages }}</span>
+                    {% if page < pages %}<a class="duels__pager-link" href="{{ path(route, {page: page + 1}) }}">Plus anciennes</a>{% endif %}
+                </nav>
+            {% endif %}
+        {% endif %}
+    </main>
+{% endblock %}

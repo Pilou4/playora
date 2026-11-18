@@ -1,0 +1,343 @@
+/* Table de tarot : celle de la belote (belote.css), avec des cartes plus étroites,
+   une main de 18 cartes (24 pendant l'écart), le chien au centre et les scores de chacun. */
+
+.tarot .belote__frame {
+    --card-w: 8.2cqw;
+    --trick-w: 7.2cqw;
+    --back-w: 4.4cqw;
+}
+
+/* ---------- Places : à 5 joueurs, deux joueurs en haut (à 3 joueurs, personne en face) ---------- */
+
+.player--top-left { left: 35%; top: 1.2%; transform: translateX(-50%); }
+.player--top-right { left: 65%; top: 1.2%; transform: translateX(-50%); }
+
+.player--top-left .player__fan,
+.player--top-right .player__fan { top: 28%; transform: rotate(180deg); }
+
+.player--top-left .player__bubble,
+.player--top-right .player__bubble { left: calc(100% + 0.8cqw); top: 2cqw; }
+
+.player--top-left .player__bubble::after,
+.player--top-right .player__bubble::after { left: -0.5cqw; top: 40%; }
+
+.trick__card--top-left { left: 24%; top: 4%; transform: rotate(6deg); }
+.trick__card--top-right { right: 24%; top: 4%; transform: rotate(-5deg); }
+
+/* ---------- Cartes ---------- */
+
+.card--tarot {
+    /* Proportions des images du Tarot classique (320 × 583) */
+    aspect-ratio: 320 / 583;
+    border-radius: 6% / 3.2%;
+}
+
+.card--tarot .card__face {
+    object-fit: cover;
+}
+
+/* Tarot moderne : cartes plus allongées (250 × 481), aux coins plus ronds */
+.tarot--tarot-moderne .card--tarot {
+    aspect-ratio: 250 / 481;
+    border-radius: 5% / 2.6%;
+}
+
+/* Papier toilé : les cartes de tarot ont déjà leur papier, on n'en ajoute pas */
+.card--tarot::after {
+    display: none;
+}
+
+/* Indice dans le coin (R ♥, 21, ★) : on lit la carte même quand elle est presque cachée dans l'éventail */
+.card__index {
+    position: absolute;
+    left: 5%;
+    top: 3%;
+    min-width: 34%;
+    padding: 4% 5%;
+    border-radius: 0.5cqw;
+    background: rgba(255, 252, 244, 0.94);
+    box-shadow: 0 0.1cqw 0.3cqw rgba(0, 0, 0, 0.25);
+    color: #1b2a4a;
+    font: 800 calc(var(--w, var(--card-w)) * 0.17) / 1 var(--font-display);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.card__index--coeur,
+.card__index--carreau {
+    color: #c8202f;
+}
+
+.card__index--atout {
+    background: #1b2a4a;
+    color: #ffd23f;
+}
+
+.card__index--excuse {
+    background: #1b2a4a;
+    color: #fff;
+}
+
+/* Tarot moderne : les indices sont imprimés sur les cartes */
+.tarot--tarot-moderne .card__index {
+    display: none;
+}
+
+/* ---------- Main : 18 cartes en éventail serré (24 pendant l'écart) ---------- */
+
+.tarot .hand__card {
+    /* Un arc presque plat, quel que soit le nombre de cartes (18 à 24) : au plus 34°, et jamais plus large
+       que 86 % de la table (rayon de l'arc : environ 9 largeurs de carte, d'où l'angle par atan2) */
+    --fan: calc(min(34deg, atan2(86cqw - var(--card-w), var(--card-w) * 9)) / var(--n));
+
+    transform-origin: 50% 700%;
+}
+
+/* Jeux des adversaires : un éventail serré de 18 dos */
+.tarot .player__fan .card {
+    transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 4.5deg));
+    transform-origin: 50% 140%;
+}
+
+.tarot .hand--active .hand__card--playable {
+    translate: 0 -1.2cqw;
+}
+
+/* Écart : les cartes du chien sont signalées, les cartes choisies montent nettement */
+.tarot .hand--discard .hand__card--dog .card {
+    box-shadow: 0 0 0 0.25cqw #ffd23f;
+}
+
+.tarot .hand--discard .hand__card--selected {
+    translate: 0 -3.4cqw;
+}
+
+.tarot .hand--discard .hand__card--selected .card {
+    box-shadow: 0 0 0 0.3cqw #ff3d7f;
+}
+
+.tarot .hand--discard .hand__card:disabled {
+    cursor: not-allowed;
+    filter: brightness(0.82);
+}
+
+/* ---------- Centre : le chien montré pendant l'écart ---------- */
+
+.tarot .bidding--dog {
+    flex-direction: column;
+    gap: 1.2cqw;
+    text-align: center;
+}
+
+.tarot .bidding--dog .bidding__card {
+    display: flex;
+    gap: 0.6cqw;
+}
+
+.tarot .bidding--dog .bidding__card .card {
+    --w: 5.2cqw;
+
+    transform: none;
+}
+
+.tarot .bidding--dog .bidding__gauge {
+    display: none;
+}
+
+/* Enchères : panneau centré, les 4 contrats sous « Passer » */
+.tarot .bidding__panel {
+    max-width: 40cqw;
+    text-align: center;
+}
+
+/* À 5 joueurs : appel d'un Roi, les cartes possibles à cliquer */
+.tarot__call {
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-out);
+}
+
+.tarot__call .card {
+    --w: 6.4cqw;
+
+    box-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.35);
+}
+
+.tarot__call:hover,
+.tarot__call:focus-visible {
+    transform: translateY(-0.8cqw);
+    outline: none;
+}
+
+.tarot .bidding__actions:has(.tarot__call) {
+    display: flex;
+    gap: 1.2cqw;
+}
+
+.tarot .bidding__actions {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: center;
+}
+
+.tarot .bidding__actions .bidding__button {
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.tarot .bidding__button--pass {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin: 0;
+}
+
+/* ---------- Poignée, chelem : boutons en bas à droite, avant la première carte ---------- */
+
+.tarot__actions {
+    position: absolute;
+    right: 1.6cqw;
+    bottom: 1.2cqw;
+    z-index: 10;
+    display: flex;
+    gap: 0.8cqw;
+    opacity: 0;
+    transform: translateY(0.6cqw);
+    transition: opacity 0.2s ease, transform 0.25s var(--ease-out);
+    pointer-events: none;
+}
+
+.tarot__actions--visible {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+
+.tarot__action {
+    height: 4cqw;
+    padding: 0 1.8cqw;
+    border-radius: 99px;
+    background: var(--cta);
+    color: #fff;
+    font: 800 1.3cqw var(--font-display);
+    box-shadow: 0 0.5cqw 1cqw rgba(0, 0, 0, 0.3);
+}
+
+/* ---------- Scores de chacun ---------- */
+
+.tarot__score-head {
+    grid-template-columns: 1fr 1.4cqw;
+}
+
+.tarot__scores {
+    margin: 0;
+    padding: 0.4cqw 0;
+    list-style: none;
+}
+
+.score:not(.score--open) .tarot__scores {
+    display: none;
+}
+
+.tarot__score-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35cqw 1cqw;
+    font: 600 1.1cqw var(--font-body);
+}
+
+.tarot__score-row--me {
+    background: var(--panel-alt);
+    font-weight: 800;
+}
+
+.tarot__score-points {
+    font-weight: 800;
+}
+
+/* ---------- Téléphone ---------- */
+
+@media (max-width: 640px) {
+    .tarot .belote__frame {
+        --card-w: 58px;
+        --trick-w: 50px;
+        --back-w: 24px;
+    }
+
+    .card__index {
+        border-radius: 4px;
+        font-size: 11px;
+    }
+
+    .player--top-left { left: 28%; top: 9%; }
+    .player--top-right { left: 72%; top: 9%; }
+
+    .player--top-left .player__bubble,
+    .player--top-right .player__bubble { top: 6px; }
+
+    .trick__card--top-left { left: 12%; }
+    .trick__card--top-right { right: 12%; }
+
+    .tarot .hand--discard .hand__card--selected {
+        translate: 0 -22px;
+    }
+
+    .tarot .bidding--dog .bidding__card .card {
+        --w: 36px;
+    }
+
+    .tarot .bidding__panel {
+        max-width: none;
+    }
+
+    /* Une seule colonne : à deux colonnes, « Garde contre » passerait sous les joueurs de côté */
+    .tarot .bidding__actions {
+        grid-template-columns: auto;
+        gap: 6px;
+    }
+
+    .tarot .bidding__actions .bidding__button {
+        height: 34px;
+        font-size: 13px;
+    }
+
+    .tarot__call .card {
+        --w: 46px;
+    }
+
+    .tarot .bidding__actions:has(.tarot__call) {
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    /* Sur téléphone, le tableau des scores ne montre que ma ligne (il couvrirait les joueurs du haut) */
+    .tarot__score-row:not(.tarot__score-row--me) {
+        display: none;
+    }
+
+    .tarot__actions {
+        left: 50%;
+        right: auto;
+        bottom: 176px;
+        translate: -50% 0;
+    }
+
+    .tarot__action {
+        height: 36px;
+        padding: 0 14px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .tarot__score-row {
+        padding: 3px 8px;
+        font-size: 11px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tarot__actions {
+        transition: none;
+    }
+}

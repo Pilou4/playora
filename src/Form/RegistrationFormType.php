@@ -10,6 +10,7 @@ use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
@@ -61,7 +62,20 @@ final class RegistrationFormType extends AbstractType
                     'data-rules' => 'password',
                 ],
                 'constraints' => PasswordPolicy::constraints(),
-            ]);
+            ])
+            // Le même mot de passe une seconde fois (vérifié ici et dans le navigateur)
+            ->add('confirmPassword', PasswordType::class, [
+                'label' => 'Confirmez le mot de passe',
+                'attr' => [
+                    'autocomplete' => 'new-password',
+                    'maxlength' => PasswordPolicy::MAX_LENGTH,
+                    'data-required-message' => 'Saisissez à nouveau le mot de passe.',
+                    'data-match' => 'registration_form_plainPassword',
+                    'data-match-message' => ResetPasswordFormType::MISMATCH,
+                ],
+                'constraints' => [new NotBlank(message: 'Saisissez à nouveau le mot de passe.')],
+            ])
+            ->addEventListener(FormEvents::POST_SUBMIT, ResetPasswordFormType::checkConfirmation(...));
     }
 
     public function configureOptions(OptionsResolver $resolver): void

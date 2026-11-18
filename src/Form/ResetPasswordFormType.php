@@ -43,14 +43,20 @@ final class ResetPasswordFormType extends AbstractType
                 ],
                 'constraints' => [new NotBlank(message: 'Saisissez à nouveau le mot de passe.')],
             ])
-            ->addEventListener(FormEvents::POST_SUBMIT, static function (FormEvent $event): void {
-                $form = $event->getForm();
-                $confirm = $form->get('confirmPassword');
+            ->addEventListener(FormEvents::POST_SUBMIT, self::checkConfirmation(...));
+    }
 
-                if ('' !== (string) $confirm->getData() && $form->get('plainPassword')->getData() !== $confirm->getData()) {
-                    $confirm->addError(new FormError(self::MISMATCH));
-                }
-            });
+    /**
+     * La confirmation doit être identique au mot de passe (inscription, nouveau mot de passe).
+     */
+    public static function checkConfirmation(FormEvent $event): void
+    {
+        $form = $event->getForm();
+        $confirm = $form->get('confirmPassword');
+
+        if ('' !== (string) $confirm->getData() && $form->get('plainPassword')->getData() !== $confirm->getData()) {
+            $confirm->addError(new FormError(self::MISMATCH));
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void

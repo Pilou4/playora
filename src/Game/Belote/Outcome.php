@@ -10,6 +10,6 @@ enum Outcome: string
     case Made = 'reussi';
     /** Le preneur est « dedans » : la défense marque 162. */
     case Failed = 'chute';
-    /** Égalité : la défense marque, les points du preneur attendent la donne suivante. */
+    /** Égalité. Belote : le preneur perd ses points ; coinche et contrée : chacun marque les siens. */
     case Litige = 'litige';
 }

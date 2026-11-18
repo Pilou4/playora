@@ -1,0 +1,10 @@
+Cartes Playora « Tarot moderne »
+
+Jeu de tarot français (78 cartes) dans le domaine public.
+Source : freesvg.org, « Deck of French tarot playing cards »
+  https://freesvg.org/deck-of-french-tarot-playing-cards
+récupéré via le paquet LaTeX « jeuxcartes » (CTAN, images « TaroTv1 »), qui indique : Public Domain.
+
+Modifications apportées par Playora : images converties au format WebP (250 × 481 pixels),
+renommées selon les codes du jeu (coeur-roi.webp, atout-21.webp, excuse.webp…).
+Correspondance : C = cœur, K = carreau, P = pique, T = trèfle ; A = 1, V = valet, C = cavalier, D = dame, R = roi ; AT = atout.

@@ -1,0 +1,261 @@
+/* ==========================================================================
+   Président (disposition A : table ronde). Le cadre, la barre du haut, le tapis et les fenêtres viennent
+   de belote.css ; les joueurs, la main, les boutons et la fin de manche, de rami.css.
+   Ici : les cartes de dos des adversaires et leur état (passe, place), le pli au centre, le titre du joueur.
+   ========================================================================== */
+
+.president .rami__frame {
+    --fan-w: 3.2cqw;
+    --trick-w: 6.6cqw;
+}
+
+/* ---------- Les autres joueurs : leurs cartes de dos, leur nom, puis « Passe » ou leur place ---------- */
+
+.president__opponent {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4cqw;
+    width: 15cqw;
+}
+
+.president__opponent--left { left: 1.4cqw; top: 15cqw; }
+.president__opponent--right { right: 1.4cqw; top: 15cqw; }
+.president__opponent--top { left: 50%; top: 1cqw; transform: translateX(-50%); }
+.president__opponent--top-left { left: 24%; top: 1cqw; }
+.president__opponent--top-right { right: 24%; top: 1cqw; }
+/* À 7 joueurs : quatre adversaires en haut, régulièrement espacés */
+.president__opponent--top-far-left { left: 9%; top: 1cqw; }
+.president__opponent--top-mid-left { left: 31%; top: 1cqw; }
+.president__opponent--top-mid-right { right: 31%; top: 1cqw; }
+.president__opponent--top-far-right { right: 9%; top: 1cqw; }
+
+/* Le nom, sous les cartes : la fiche du rami, posée dans le flux */
+.president__opponent .rami__opponent {
+    position: static;
+    width: 100%;
+    transform: none;
+}
+
+.president__opponent--turn .rami__opponent {
+    box-shadow: 0 0 0 0.25cqw #ffd23f, 0 0.4cqw 1cqw rgba(0, 0, 0, 0.2);
+}
+
+.president__fan {
+    --step: 1cqw;
+
+    position: relative;
+    width: calc(var(--fan-w) + (var(--n, 1) - 1) * var(--step));
+    min-width: var(--fan-w);
+    height: calc(var(--fan-w) * 1.4);
+}
+
+.president__fan .rami__card {
+    --w: var(--fan-w);
+
+    position: absolute;
+    top: 0;
+    left: calc(var(--i) * var(--step));
+}
+
+/* Le titre gagné à la manche précédente, au-dessus de ses cartes */
+.president__role {
+    min-height: 1.6cqw;
+    margin: 0;
+    color: #fff;
+    font: 800 min(0.95cqw, 0.75rem) var(--font-display);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.president__role--president,
+.president__role--vice-president {
+    color: #ffd23f;
+}
+
+/* « Passe », « 1er »… : sa place est toujours réservée, rien ne bouge quand il apparaît */
+.president__status {
+    min-height: 1.8cqw;
+    margin: 0;
+    padding: 0.2cqw 0.9cqw;
+    border-radius: 99px;
+    background: rgba(255, 250, 240, 0.92);
+    color: #1b2a4a;
+    font: 700 min(0.95cqw, 0.75rem) var(--font-body);
+    white-space: nowrap;
+    visibility: hidden;
+}
+
+.president__status--visible {
+    visibility: visible;
+}
+
+/* ---------- Au centre : le pli en cours ---------- */
+
+.president__center {
+    position: absolute;
+    top: 14cqw;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1cqw;
+    width: 46cqw;
+    transform: translateX(-50%);
+}
+
+.president__trick {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: calc(var(--trick-w) * 1.4 + 2.4cqw);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.president__play-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4cqw;
+    margin-left: -1.6cqw;
+    opacity: calc(1 - var(--depth, 0) * 0.18);
+    scale: calc(1 - var(--depth, 0) * 0.08);
+    transform-origin: bottom center;
+}
+
+.president__play-group:first-child {
+    margin-left: 0;
+}
+
+.president__play-cards {
+    display: flex;
+}
+
+.president__play-cards .rami__card {
+    --w: var(--trick-w);
+}
+
+.president__play-cards .rami__card + .rami__card {
+    margin-left: calc(var(--trick-w) * -0.55);
+}
+
+.president__play-who {
+    margin: 0;
+    padding: 0.15cqw 0.8cqw;
+    border-radius: 99px;
+    background: rgba(255, 250, 240, 0.92);
+    color: #1b2a4a;
+    font: 700 min(0.9cqw, 0.72rem) var(--font-body);
+    white-space: nowrap;
+}
+
+/* Le pli écarté reste visible, grisé, jusqu'à la pose suivante */
+.president__trick--cleared .president__play-group {
+    opacity: 0.4;
+    filter: grayscale(0.6);
+}
+
+.president__need {
+    min-height: 1.8cqw;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.92);
+    font: 700 min(1.05cqw, 0.85rem) var(--font-body);
+    text-align: center;
+}
+
+/* ---------- Le joueur : son titre, ses boutons, sa main ---------- */
+
+.president__me {
+    min-height: 1.6cqw;
+    margin: 0;
+    color: #ffd23f;
+    font: 800 min(1.1cqw, 0.85rem) var(--font-display);
+}
+
+/* Les boutons gardent leur place quand ils sont cachés : rien ne saute */
+.president__actions .rami__buttons {
+    min-height: min(2.8cqw, 32px);
+}
+
+/* Pas son tour : les cartes restent lisibles mais ne réagissent pas au survol */
+.president__card--idle {
+    cursor: default;
+}
+
+.president .rami__card--hand:not(.president__card--idle):hover {
+    translate: 0 -0.8cqw;
+}
+
+.president .rami__card--hand.rami__card--selected,
+.president .rami__card--hand.rami__card--selected:hover {
+    translate: 0 -2.2cqw;
+}
+
+/* ---------- Téléphone ---------- */
+
+@media (max-width: 640px) {
+    .president .rami__frame {
+        --fan-w: 16px;
+        --trick-w: 46px;
+    }
+
+    /* Les adversaires en haut, sur une ligne */
+    .president .rami__opponents {
+        inset: 6px 6px auto;
+        display: flex;
+        gap: 4px;
+    }
+
+    .president__opponent {
+        position: static;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        transform: none;
+    }
+
+    .president__fan {
+        --step: 4px;
+    }
+
+    .president__role {
+        min-height: 14px;
+        font-size: 10px;
+    }
+
+    .president__status {
+        min-height: 16px;
+        padding: 1px 6px;
+        font-size: 10px;
+    }
+
+    .president__center {
+        top: 30%;
+        width: calc(100% - 16px);
+    }
+
+    .president__play-group {
+        margin-left: -10px;
+    }
+
+    .president__play-who,
+    .president__need {
+        font-size: 11px;
+    }
+
+    .president__me {
+        font-size: 12px;
+    }
+
+    .president .rami__card--hand.rami__card--selected,
+    .president .rami__card--hand.rami__card--selected:hover {
+        translate: 0 -14px;
+    }
+
+    .president .rami__card--hand:not(.president__card--idle):hover {
+        translate: 0 -6px;
+    }
+}

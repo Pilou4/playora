@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Les jeux de cartes en ligne : belote, coinche, tarot, rami | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Tous les jeux de Playora : belote, coinche et contrée, tarot et rami. Jouez en ligne avec vos amis ou avec d'autres joueurs.">
+{% endblock %}
+
+{% block og_title %}Les jeux de cartes en ligne | Playora{% endblock %}
+{% block og_description %}Belote, coinche et contrée, tarot et rami : choisissez votre jeu.{% endblock %}
+
+{% block main_id %}jeux{% endblock %}
+
+{% block body %}
+    <main id="jeux" class="home">
+        <section class="games games--page" aria-labelledby="jeux-titre">
+            <h1 id="jeux-titre" class="section-title">Les jeux</h1>
+            {{ include('game/_games.html.twig', {heading: 'h2'}) }}
+        </section>
+    </main>
+{% endblock %}

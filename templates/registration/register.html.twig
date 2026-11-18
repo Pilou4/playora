@@ -21,10 +21,11 @@
             <p class="auth__lead">Gratuit, en moins d’une minute.</p>
 
             {{ form_start(form) }}
+                {{ form_errors(form) }}
                 {{ form_row(form.email) }}
                 {{ form_row(form.pseudo) }}
                 {{ form_row(form.plainPassword) }}
-                {{ form_errors(form) }}
+                {{ form_row(form.confirmPassword) }}
 
                 <button class="button button--brand button--large button--block" type="submit">Créer mon compte</button>
 

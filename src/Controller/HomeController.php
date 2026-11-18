@@ -15,4 +15,10 @@ final class HomeController extends AbstractController
     {
         return $this->render('home/index.html.twig');
     }
+
+    #[Route('/jeux', name: 'app_games', methods: ['GET'])]
+    public function games(): Response
+    {
+        return $this->render('game/index.html.twig');
+    }
 }

@@ -66,7 +66,7 @@ final class ProfileControllerTest extends WebTestCase
         self::assertSelectorCount(1, 'h1');
         self::assertSelectorTextContains('h1', 'Bienvenue Fred');
         self::assertSelectorExists('main#bienvenue');
-        self::assertSelectorCount(24, 'input.welcome__radio');
+        self::assertSelectorCount(12, 'input.welcome__radio');
         // Sans avatar, le menu du compte affiche l'initiale
         self::assertSelectorTextContains('.account-menu__avatar--initial', 'F');
     }

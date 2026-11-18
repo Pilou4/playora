@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Partie de Président | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Votre partie de Président en cours sur Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'president']) }}{% endblock %}
+
+{% block main_id %}partie{% endblock %}
+
+{# Pendant une partie, pas d'en-tête du site (ni menu, ni déconnexion) : la table prend tout l'écran #}
+{% block site_header %}{% endblock %}
+
+{% block body %}
+    {# Disposition A : les adversaires autour de la table, le pli au centre, la main en bas.
+       Le cadre, le tapis et les fenêtres sont ceux de la belote ; les joueurs, la main et la fin de manche, ceux du rami. #}
+    <main id="partie" class="game-table belote rami president belote--{{ room.carpet.value }}"
+          data-view="{{ view|json_encode }}"
+          data-api-url="{{ path('api_president_game', {id: game.id}) }}"
+          data-hub-url="{{ mercure(topic) }}"
+          data-csrf="{{ csrf_token('submit') }}"
+          data-cards-url="{{ asset(room.cardSet.path) }}"
+          data-back-url="{{ asset(room.cardBack.path) }}"
+          data-leave-url="{{ path('api_president_leave', {id: game.id}) }}"
+          data-lobby-url="{{ path('app_game_lobby', {game: room.game.value}) }}">
+        <h1 class="visually-hidden">Partie de Président en {{ game.goal }} points</h1>
+
+        <div class="belote__frame rami__frame">
+            <header class="belote__toolbar rami__toolbar">
+                <p class="belote__title">Président <span class="belote__subtitle">· manche <b class="rami__round">{{ view.round }}</b> · partie en {{ game.goal }} points</span></p>
+
+                {# Temps du tour en cours #}
+                <div class="rami__clock" role="timer" aria-label="Temps du tour">
+                    <span class="rami__clock-fill"></span>
+                </div>
+
+                <p class="rami__score">Vous <b class="rami__score-value">0</b> pts</p>
+
+                <div class="belote__tools">
+                    {{ include('game/_sound_button.html.twig') }}
+                    <button class="belote__tool belote__tool--rules" type="button" title="Règles du jeu">
+                        <img src="{{ asset('images/icones/regles.svg') }}" width="18" height="18" alt=""><span class="visually-hidden">Règles du jeu</span>
+                    </button>
+                    <button class="belote__tool belote__tool--fullscreen" type="button" title="Plein écran">
+                        <img src="{{ asset('images/icones/plein-ecran.svg') }}" width="18" height="18" alt=""><span class="visually-hidden">Plein écran</span>
+                    </button>
+                    <button class="belote__quit" type="button">Quitter</button>
+                </div>
+            </header>
+
+            <div class="belote__felt rami__felt">
+                <section class="rami__opponents" aria-label="Les autres joueurs"></section>
+
+                {# Le pli en cours : les poses, l'une sur l'autre ; la dernière est à battre #}
+                <section class="president__center" aria-label="Pli en cours">
+                    <ol class="president__trick"></ol>
+                    <p class="president__need" aria-live="polite"></p>
+                </section>
+
+                <div class="rami__actions president__actions">
+                    <p class="president__me"></p>
+                    <p class="rami__hint" aria-live="polite"></p>
+                    <div class="rami__buttons">
+                        <button class="rami__button rami__button--brand president__play" type="button">Poser</button>
+                        <button class="rami__button president__pass" type="button">Passer</button>
+                    </div>
+                </div>
+
+                <ol class="rami__hand" aria-label="Votre main"></ol>
+
+                <p class="belote__toast" role="status"></p>
+
+                {# Fin d'une manche, fin de la partie #}
+                <section class="rami__overlay" aria-live="polite">
+                    <div class="rami__panel">
+                        <h2 class="rami__panel-title"></h2>
+                        <ol class="rami__results"></ol>
+                        <a class="belote__end-link rami__panel-link" href="{{ path('app_game_lobby', {game: room.game.value}) }}">Retour aux salons</a>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <dialog class="belote__rules" aria-labelledby="regles-partie-titre">
+            <div class="belote__rules-head">
+                <h2 id="regles-partie-titre" class="belote__rules-title">Règles du Président</h2>
+                <button class="belote__rules-close" type="button">Fermer</button>
+            </div>
+            {% include 'game/_rules_president.html.twig' with {in_dialog: true} %}
+        </dialog>
+
+        {# Quitter la partie en cours : un robot prend la place #}
+        <dialog class="belote__leave rami__leave-dialog" aria-labelledby="quitter-titre" aria-describedby="quitter-texte">
+            <h2 id="quitter-titre" class="belote__leave-title">Quitter la partie ?</h2>
+            <p id="quitter-texte" class="belote__leave-text">Un robot prend votre place et la partie vous est comptée perdue. Vous ne pourrez pas revenir.</p>
+            <p class="belote__leave-error" role="alert"></p>
+            <div class="belote__leave-actions">
+                <button class="belote__leave-stay rami__leave-cancel" type="button">Rester</button>
+                <button class="belote__leave-confirm rami__leave-confirm" type="button">Quitter la partie</button>
+            </div>
+        </dialog>
+    </main>
+{% endblock %}

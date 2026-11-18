@@ -1,0 +1,47 @@
+{# Règles du 8 américain : page des salons et fenêtre des règles d'une table #}
+{% if in_dialog|default(false) %}
+<section class="rules rules--dialog">
+{% else %}
+<section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
+{% endif %}
+    <h2 id="regles-titre" class="visually-hidden">Règles du 8 américain</h2>
+    <div class="rules__content">
+
+    <div class="rules__intro">
+        <article class="rules__summary">
+            <h3 class="rules__heading rules__heading--large">Le 8 américain en 30 secondes</h3>
+            <p class="rules__summary-text">De 2 à 6 joueurs, 8 cartes chacun à deux, 7 au-delà (deux jeux de 52 cartes à partir de 5 joueurs). Posez une carte de la <strong>couleur demandée</strong> ou de la <strong>même hauteur</strong>. Le premier qui n’a plus de cartes finit la manche ; les autres comptent les cartes qui leur restent. <strong>Le moins de points gagne.</strong></p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading">Les cartes spéciales</h3>
+            <ol class="rules__steps">
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">8</span>
+                    <div><p class="rules__step-title">Le 8</p><p class="rules__text">Se pose sur n’importe quelle carte : vous choisissez la couleur qui suit.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">A</span>
+                    <div><p class="rules__step-title">L’As</p><p class="rules__text">Le joueur suivant pioche 2 cartes, sauf s’il pose un As à son tour : c’est alors au suivant d’en piocher 4, et ainsi de suite.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">V</span>
+                    <div><p class="rules__step-title">Valet, 10 et 7</p><p class="rules__text">Valet : le joueur suivant passe son tour. 10 : vous rejouez. 7 : le sens du jeu change.</p></div>
+                </li>
+            </ol>
+        </article>
+    </div>
+
+    <article class="rules__box">
+        <h3 class="rules__heading rules__heading--medium">Piocher, « Carte ! » et points</h3>
+        <dl class="rules__announces">
+            <div class="rules__announce"><dt class="rules__announce-name">Rien à poser</dt><dd class="rules__announce-detail">piochez une carte : posez-la si elle va, sinon c’est au suivant</dd><dd class="rules__announce-points">+1</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">« Carte ! » oublié</dt><dd class="rules__announce-detail">appuyez sur « Carte ! » en posant votre avant-dernière carte</dd><dd class="rules__announce-points">+2</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">8</dt><dd class="rules__announce-detail">resté en main à la fin de la manche</dd><dd class="rules__announce-points">50</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">As</dt><dd class="rules__announce-detail">resté en main</dd><dd class="rules__announce-points">11</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Roi, Dame, Valet</dt><dd class="rules__announce-detail">restés en main</dd><dd class="rules__announce-points">10</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">2 à 10</dt><dd class="rules__announce-detail">leur valeur</dd><dd class="rules__announce-points">2 à 10</dd></div>
+        </dl>
+    </article>
+
+    </div>
+</section>

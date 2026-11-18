@@ -88,11 +88,4 @@ export default class Animator {
 
         return null;
     }
-
-    // Petite arrivée en douceur (carte qui apparaît à sa place)
-    static settle(element) {
-        if (!REDUCED.matches) {
-            element.animate([{ transform: 'scale(.92)', opacity: 0.4 }, { transform: 'scale(1)', opacity: 1 }], { duration: 180, easing: EASE });
-        }
-    }
 }

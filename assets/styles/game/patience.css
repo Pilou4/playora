@@ -1,0 +1,208 @@
+/* ==========================================================================
+   FreeCell, Pyramide, Golf solitaire : la table du solitaire (cadre, ticket, bois, fenêtres : solitaire.css),
+   avec la grille de chaque jeu. Les cartes gardent la taille et l'ombre de celles du solitaire.
+   ========================================================================== */
+
+/* ---------- Grilles en colonnes (FreeCell : 8, Golf : 7) ---------- */
+
+.patience--freecell .solitaire__frame {
+    --card-w: 7.6cqw;
+    --gap: 1.6cqw;
+}
+
+.patience__top,
+.patience__tableau {
+    --columns: 7;
+
+    position: absolute;
+    left: max(var(--edge), calc(50% - (var(--columns) * var(--card-w) + (var(--columns) - 1) * var(--gap)) / 2));
+    display: grid;
+    grid-template-columns: repeat(var(--columns), var(--card-w));
+    gap: var(--gap);
+    width: calc(var(--columns) * var(--card-w) + (var(--columns) - 1) * var(--gap));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.patience__top,
+.patience__tableau--8 {
+    --columns: 8;
+}
+
+.patience__top {
+    top: 2.4cqw;
+    height: var(--card-h);
+}
+
+.patience__tableau--8 {
+    top: calc(4.8cqw + var(--card-h));
+    bottom: 2cqw;
+}
+
+/* Golf : les colonnes en haut, le talon et la pile en bas */
+.patience__tableau--7 {
+    top: 2.4cqw;
+    bottom: calc(var(--card-h) + 5cqw);
+}
+
+/* FreeCell : 4 cellules, puis les 4 familles, sur la même ligne que les colonnes */
+.patience__cells,
+.patience__foundations {
+    display: contents;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.patience__cell {
+    position: relative;
+    width: var(--card-w);
+    height: var(--card-h);
+    border-radius: 0.8cqw;
+    background: rgba(60, 25, 8, 0.28);
+    box-shadow: inset 0 0.3cqw 0.8cqw rgba(30, 10, 2, 0.55), inset 0 -1px 0 rgba(255, 220, 180, 0.2);
+}
+
+.patience__cell .solitaire__card,
+.patience__foundation .solitaire__card {
+    position: absolute;
+    inset: 0;
+}
+
+.patience__foundation:first-child {
+    grid-column: 5;
+}
+
+/* ---------- En bas : talon, défausse ou pile ---------- */
+
+.patience__bottom {
+    position: absolute;
+    bottom: 2.4cqw;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: 2.4cqw;
+    transform: translateX(-50%);
+}
+
+.patience__waste,
+.patience__pile {
+    position: relative;
+    width: var(--card-w);
+    height: var(--card-h);
+    border-radius: 0.8cqw;
+    background: rgba(60, 25, 8, 0.28);
+    box-shadow: inset 0 0.3cqw 0.8cqw rgba(30, 10, 2, 0.55);
+}
+
+.patience__waste .solitaire__card,
+.patience__pile .solitaire__card {
+    position: absolute;
+    inset: 0;
+}
+
+/* La pile du Golf : la carte sur laquelle on joue, bien en vue */
+.patience__pile .solitaire__card {
+    box-shadow: 0 0 0 0.25cqw #ffd23f, 0 0.4cqw 1cqw rgba(30, 10, 2, 0.5);
+}
+
+.patience__passes {
+    min-width: 14cqw;
+    margin: 0;
+    color: rgba(255, 236, 210, 0.9);
+    font: 700 1.3cqw var(--font-body);
+}
+
+/* ---------- Pyramide : 7 rangées, chaque carte à cheval sur les deux du dessous ---------- */
+
+.patience--pyramide .solitaire__frame {
+    --card-w: 6.4cqw;
+    --gap: 0.9cqw;
+    --step: 0.42;
+}
+
+.patience__pyramid {
+    position: absolute;
+    top: 2.4cqw;
+    left: 50%;
+    width: 0;
+    height: calc(var(--card-h) * (1 + 6 * var(--step)));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.patience__slot {
+    position: absolute;
+    top: calc(var(--row) * var(--card-h) * var(--step));
+    left: calc((var(--col) - var(--row) / 2) * (var(--card-w) + var(--gap)) - var(--card-w) / 2);
+    z-index: calc(var(--row) + 1);
+    width: var(--card-w);
+    height: var(--card-h);
+}
+
+.patience__slot .solitaire__card {
+    position: absolute;
+    inset: 0;
+    transition: translate 0.15s ease, filter 0.2s ease;
+}
+
+/* Une carte encore couverte : un peu dans l'ombre */
+.patience__card--covered {
+    filter: brightness(0.82);
+}
+
+/* La carte choisie (en attente de sa paire) se soulève, entourée de jaune */
+.patience__card--selected {
+    translate: 0 -0.8cqw;
+    box-shadow: 0 0 0 0.3cqw #ffd23f, 0 0.8cqw 1.4cqw rgba(30, 10, 2, 0.5);
+}
+
+/* ---------- Téléphone : la grille sur toute la largeur ---------- */
+
+@media (max-width: 640px) {
+    .patience--freecell .solitaire__frame {
+        --card-w: calc((100cqw - 12px - 2 * var(--edge) - 7 * var(--gap)) / 8);
+        --gap: 3px;
+    }
+
+    .patience--pyramide .solitaire__frame {
+        --card-w: calc((100cqw - 12px - 2 * var(--edge) - 6 * var(--gap)) / 7);
+        --gap: 3px;
+        --step: 0.5;
+    }
+
+    .patience__top {
+        top: 10px;
+    }
+
+    .patience__tableau--8 {
+        top: calc(22px + var(--card-h));
+    }
+
+    .patience__tableau--7 {
+        top: 10px;
+        bottom: calc(var(--card-h) + 30px);
+    }
+
+    .patience__pyramid {
+        top: 16px;
+    }
+
+    .patience__bottom {
+        bottom: 12px;
+        gap: 14px;
+    }
+
+    .patience__passes {
+        min-width: 0;
+        font-size: 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .patience__slot .solitaire__card {
+        transition: none;
+    }
+}

@@ -1,0 +1,55 @@
+{# Liste des jeux (accueil et page « Les jeux »), en deux groupes : à plusieurs, en duel.
+   heading : niveau du titre de chaque groupe (h2 ou h3) ; le nom de chaque jeu est au niveau suivant.
+   Un jeu inactif (réglé dans l'admin) est caché ; les admins le voient, marqué « hors ligne », pour le tester. #}
+{% set cards = 'images/cartes/francais/moderne/' %}
+{% set game_heading = 'h' ~ (heading|slice(1) + 1) %}
+{% set groups = [
+    {title: 'À plusieurs', wide: false, games: [
+        {name: 'Belote', info: '4 joueurs · 2 équipes · 32 cartes', slug: 'belote', url: path('app_game_lobby', {game: 'belote'}), theme: 'orange', cards: ['carreau/valet', 'coeur/roi']},
+        {name: 'Coinche', info: '4 joueurs · enchères de 80 à 160', slug: 'coinche', url: path('app_game_lobby', {game: 'coinche'}), theme: 'yellow', cards: ['carreau/10', 'coeur/7']},
+        {name: 'Contrée', info: '4 joueurs · contrer, surcontrer', slug: 'contree', url: path('app_game_lobby', {game: 'contree'}), theme: 'navy', cards: ['trefle/as', 'trefle/dame']},
+        {name: 'Tarot', info: '3 à 5 joueurs · 78 cartes', slug: 'tarot', url: path('app_game_lobby', {game: 'tarot'}), theme: 'teal', cards: ['pique/as', 'pique/dame']},
+        {name: 'Rami', info: '2 à 6 joueurs · 108 cartes', slug: 'rami', url: path('app_game_lobby', {game: 'rami'}), theme: 'pink', cards: ['coeur/7', 'coeur/8']},
+        {name: '8 américain', info: '2 à 6 joueurs · le 8 change la couleur', slug: 'huit-americain', url: path('app_game_lobby', {game: 'huit-americain'}), theme: 'orange', cards: ['pique/8', 'carreau/as']},
+        {name: 'Golf', info: '2 à 6 joueurs · 6 cartes · 9 ou 18 trous', slug: 'golf', url: path('app_game_lobby', {game: 'golf'}), theme: 'teal', cards: ['pique/2', 'coeur/roi']},
+        {name: 'Président', info: '3 à 7 joueurs · le 2 est la plus forte', slug: 'president', url: path('app_game_lobby', {game: 'president'}), theme: 'navy', cards: ['coeur/2', 'pique/as']},
+    ]},
+    {title: 'En duel', wide: false, games: [
+        {name: 'Solitaire', info: '2 à 5 joueurs · 3 cartes au talon · 5 minutes', slug: 'solitaire', url: path('app_game_lobby', {game: 'solitaire'}), theme: 'pink', cards: ['coeur/as', 'trefle/roi']},
+        {name: 'Solitaire harmonie', info: '2 à 5 joueurs · 1 carte au talon · 5 minutes', slug: 'solitaire-harmonie', url: path('app_game_lobby', {game: 'solitaire-harmonie'}), theme: 'yellow', cards: ['carreau/as', 'pique/roi']},
+        {name: 'Spider débutant', info: '2 à 5 joueurs · 1 couleur · 5 minutes', slug: 'spider-debutant', url: path('app_game_lobby', {game: 'spider-debutant'}), theme: 'teal', cards: ['pique/10', 'pique/valet']},
+        {name: 'Spider', info: '2 à 5 joueurs · 2 couleurs · 5 minutes', slug: 'spider', url: path('app_game_lobby', {game: 'spider'}), theme: 'orange', cards: ['coeur/dame', 'pique/roi']},
+        {name: 'Spider Pro', info: '2 à 5 joueurs · 4 couleurs · 2 Jokers', slug: 'spider-pro', url: path('app_game_lobby', {game: 'spider-pro'}), theme: 'navy', cards: ['carreau/roi', 'trefle/dame']},
+        {name: 'FreeCell', info: '2 à 5 joueurs · 4 cellules libres · 5 minutes', slug: 'freecell', url: path('app_game_lobby', {game: 'freecell'}), theme: 'teal', cards: ['trefle/valet', 'coeur/10']},
+        {name: 'Pyramide', info: '2 à 5 joueurs · paires de 13 · 5 minutes', slug: 'pyramide', url: path('app_game_lobby', {game: 'pyramide'}), theme: 'yellow', cards: ['coeur/roi', 'pique/dame']},
+        {name: 'Golf solitaire', info: '2 à 5 joueurs · une de plus, une de moins · 5 minutes', slug: 'golf-solitaire', url: path('app_game_lobby', {game: 'golf-solitaire'}), theme: 'pink', cards: ['pique/7', 'carreau/8']},
+    ]},
+] %}
+{% for group in groups %}
+    {% set open_games = group.games|filter(game => game_open(game.slug)) %}
+    {% if open_games is not empty %}
+    <div class="games__group">
+        <{{ heading }} class="games__group-title">{{ group.title }}</{{ heading }}>
+        <ul class="games__list{% if group.wide %} games__list--wide{% endif %}">
+            {% for game in open_games %}
+                <li class="game game--{{ game.theme }}{% if group.wide %} game--wide{% endif %}">
+                    <article class="game__inner">
+                        <{{ game_heading }} class="game__name">{{ game.name }}</{{ game_heading }}>
+                        <p class="game__info">{{ game.info }}{% if not game_active(game.slug) %} · hors ligne (visible par les admins){% endif %}</p>
+                        {% if game.url %}
+                            <a class="button button--white game__play" href="{{ game.url }}">Jouer<span class="visually-hidden"> : {{ game.name }}</span></a>
+                        {% else %}
+                            <p class="game__soon">Bientôt</p>
+                        {% endif %}
+                        <div class="game__cards" aria-hidden="true">
+                            {% for card in game.cards %}
+                                <img class="game__card" src="{{ asset(cards ~ card ~ '.svg') }}" width="250" height="350" alt="" loading="lazy">
+                            {% endfor %}
+                        </div>
+                    </article>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+{% endfor %}

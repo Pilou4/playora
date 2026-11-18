@@ -1,0 +1,46 @@
+{# Règles du rami (« Rami 51 ») : page des salons et fenêtre des règles d'une table #}
+{% if in_dialog|default(false) %}
+<section class="rules rules--dialog">
+{% else %}
+<section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
+{% endif %}
+    <h2 id="regles-titre" class="visually-hidden">Règles du rami</h2>
+    <div class="rules__content">
+
+    <div class="rules__intro">
+        <article class="rules__summary">
+            <h3 class="rules__heading rules__heading--large">Le rami en 30 secondes</h3>
+            <p class="rules__summary-text">De 2 à 6 joueurs, 108 cartes (2 jeux et 4 jokers), 13 cartes chacun. Posez vos cartes en <strong>suites</strong> et en <strong>brelans</strong> : le premier qui n’a plus de cartes finit la manche. Les autres comptent les points qui leur restent en main ; la partie s’arrête quand un joueur atteint les points prévus. <strong>Le moins de points gagne.</strong></p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading">Comment jouer</h3>
+            <ol class="rules__steps">
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">1</span>
+                    <div><p class="rules__step-title">Prendre une carte</p><p class="rules__text">Celle de la pioche, ou celle du dessus de la défausse, à condition de la poser pendant le même tour (sinon, rendez-la).</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">2</span>
+                    <div><p class="rules__step-title">Poser</p><p class="rules__text">Une suite : au moins 3 cartes qui se suivent dans une même couleur. Un brelan ou un carré : 3 ou 4 cartes de même hauteur, de couleurs différentes. La première pose doit faire au moins <strong>51 points</strong>, dont une suite. Ensuite, complétez les combinaisons posées, les vôtres comme celles des autres.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">3</span>
+                    <div><p class="rules__step-title">Défausser</p><p class="rules__text">Une carte de votre main va sur la défausse : c’est au joueur suivant.</p></div>
+                </li>
+            </ol>
+        </article>
+    </div>
+
+    <article class="rules__box">
+        <h3 class="rules__heading rules__heading--medium">Points</h3>
+        <dl class="rules__announces">
+            <div class="rules__announce"><dt class="rules__announce-name">Joker</dt><dd class="rules__announce-detail">remplace n’importe quelle carte ; on le reprend en posant la carte qu’il remplace</dd><dd class="rules__announce-points">20</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">As</dt><dd class="rules__announce-detail">avant le 2 ou après le Roi (1 point en bas d’une suite)</dd><dd class="rules__announce-points">11</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Roi, Dame, Valet</dt><dd class="rules__announce-detail">les figures</dd><dd class="rules__announce-points">10</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">2 à 10</dt><dd class="rules__announce-detail">leur valeur</dd><dd class="rules__announce-points">2 à 10</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Rami sec</dt><dd class="rules__announce-detail">tout poser d’un coup, sans avoir rien posé avant : les points des autres comptent double</dd><dd class="rules__announce-points">×2</dd></div>
+        </dl>
+    </article>
+
+    </div>
+</section>

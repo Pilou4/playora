@@ -14,13 +14,6 @@
 {% block body %}
     {% set cards = 'images/cartes/francais/moderne/' %}
 
-    {% set games = [
-        {name: 'Belote', info: '4 joueurs · 2 équipes · 32 cartes', url: path('app_game_lobby', {game: 'belote'}), theme: 'orange', cards: ['carreau/valet', 'coeur/roi']},
-        {name: 'Tarot', info: '3 à 5 joueurs · 78 cartes', url: null, theme: 'teal', cards: ['pique/as', 'pique/dame']},
-        {name: 'Coinche', info: '4 joueurs · enchères', url: null, theme: 'yellow', cards: ['carreau/10', 'coeur/7']},
-        {name: 'Rami', info: '2 à 6 joueurs · combinaisons', url: null, theme: 'navy', cards: ['trefle/8', 'trefle/dame']},
-    ] %}
-
     {% set steps = [
         {title: 'Créez votre compte', text: 'Une adresse e-mail et un pseudo suffisent.'},
         {title: 'Ouvrez une table', text: 'Un lien pour vos amis, ou une place chez d’autres joueurs.'},
@@ -31,8 +24,8 @@
         <section class="hero" aria-labelledby="accueil-titre">
             <div class="hero__panel">
                 <div class="hero__text">
-                    <h1 id="accueil-titre" class="hero__title">Vos jeux de cartes, en vrai et partout.</h1>
-                    <p class="hero__lead">Belote, tarot, coinche et rami. Jouez avec vos amis ou avec d’autres joueurs, en quelques secondes.</p>
+                    <h1 id="accueil-titre" class="hero__title">Bien plus qu’un jeu. Une communauté.</h1>
+                    <p class="hero__lead">Retrouvez vos jeux favoris, partagez des parties avec vos amis et affrontez des joueurs en ligne. Du simple divertissement aux duels les plus disputés, il y a toujours une partie à lancer.</p>
                     <div class="hero__actions">
                         <a class="button button--dark button--large" href="{{ path('app_game_lobby', {game: 'belote'}) }}">Jouer maintenant</a>
                         <a class="button button--light button--large" href="/salons/nouveau">Inviter des amis</a>
@@ -54,26 +47,7 @@
 
         <section class="games" aria-labelledby="jeux-titre">
             <h2 id="jeux-titre" class="section-title">Les jeux</h2>
-            <ul class="games__list">
-                {% for game in games %}
-                    <li class="game game--{{ game.theme }}">
-                        <article class="game__inner">
-                            <h3 class="game__name">{{ game.name }}</h3>
-                            <p class="game__info">{{ game.info }}</p>
-                            {% if game.url %}
-                                <a class="button button--white" href="{{ game.url }}">Jouer<span class="visually-hidden"> : {{ game.name }}</span></a>
-                            {% else %}
-                                <p class="game__soon">Bientôt</p>
-                            {% endif %}
-                            <div class="game__cards" aria-hidden="true">
-                                {% for card in game.cards %}
-                                    <img class="game__card" src="{{ asset(cards ~ card ~ '.svg') }}" width="250" height="350" alt="" loading="lazy">
-                                {% endfor %}
-                            </div>
-                        </article>
-                    </li>
-                {% endfor %}
-            </ul>
+            {{ include('game/_games.html.twig', {heading: 'h3'}) }}
         </section>
 
         <section class="steps" aria-labelledby="etapes-titre">

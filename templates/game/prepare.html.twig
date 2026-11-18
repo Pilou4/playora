@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ game.label }} : préparez-vous | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Confirmez votre participation à un duel de {{ game.label|lower }} sur Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'games']) }}{% endblock %}
+
+{% block main_id %}preparation{% endblock %}
+
+{% block body %}
+    {# Duel solo : page d'entre-deux avant de créer ou de rejoindre une partie. « Jouer maintenant » passe par l'API
+       (créer le salon, ou prendre la place libre), puis la table s'ouvre et la partie commence aussitôt. #}
+    {% set cards = 'images/cartes/francais/moderne/' %}
+    {% set joining = room is not null %}
+    <main id="preparation" class="prepare"
+          data-api-url="{{ path('api_game_rooms', {game: game.value}) }}"
+          data-csrf="{{ csrf_token('submit') }}"
+          data-room="{{ joining ? room.id : '' }}"
+          data-position="{{ position ?? '' }}"
+          data-players="{{ players }}">
+        <section class="prepare__card" aria-labelledby="preparation-titre">
+            <div class="prepare__band">
+                <p class="prepare__game">{{ game.label }}</p>
+                <div class="prepare__cards" aria-hidden="true">
+                    <img class="prepare__deco prepare__deco--left" src="{{ asset(cards ~ 'coeur/as.svg') }}" width="250" height="350" alt="">
+                    <img class="prepare__deco prepare__deco--right" src="{{ asset(cards ~ 'pique/roi.svg') }}" width="250" height="350" alt="">
+                </div>
+            </div>
+
+            <div class="prepare__body">
+                <h1 id="preparation-titre" class="prepare__title">Préparez-vous…</h1>
+                <p class="prepare__subtitle">{{ joining ? 'Confirmer la participation' : 'Confirmer la création de la partie' }}</p>
+
+                <dl class="prepare__details">
+                    <div class="prepare__row"><dt class="prepare__label">Jeu</dt><dd class="prepare__value">{{ game.label }}</dd></div>
+                    <div class="prepare__row"><dt class="prepare__label">Forme</dt><dd class="prepare__value prepare__value--accent">Duel : la même donne pour tous</dd></div>
+                    <div class="prepare__row"><dt class="prepare__label">Nombre de participants</dt><dd class="prepare__value">{{ players }}</dd></div>
+                    {% if game.solitaireDraw %}
+                        <div class="prepare__row"><dt class="prepare__label">Talon</dt><dd class="prepare__value">{{ game.solitaireDraw == 1 ? '1 carte à la fois' : game.solitaireDraw ~ ' cartes à la fois' }}</dd></div>
+                    {% endif %}
+                    <div class="prepare__row"><dt class="prepare__label">Temps</dt><dd class="prepare__value">5 minutes</dd></div>
+                    <div class="prepare__row"><dt class="prepare__label">Gagnant</dt><dd class="prepare__value">Le meilleur score</dd></div>
+                    {% if joining %}
+                        <div class="prepare__row"><dt class="prepare__label">Déjà inscrits</dt><dd class="prepare__value">{{ room.seats|filter(seat => seat.user is not null)|map(seat => seat.user.pseudo)|join(', ') }}</dd></div>
+                    {% endif %}
+                </dl>
+
+                <p class="prepare__note">{{ joining
+                    ? 'Votre partie commence dès que vous cliquez : vous ne verrez les scores des autres qu’une fois la vôtre terminée.'
+                    : 'Votre partie commence dès que vous cliquez. Les autres joueurs rejoindront votre duel quand ils le voudront.' }}</p>
+
+                {% if joining and position is null %}
+                    <p class="prepare__error prepare__error--visible" role="alert">Ce duel est complet : choisissez-en un autre.</p>
+                {% else %}
+                    <p class="prepare__error" role="alert"></p>
+                    <div class="prepare__actions">
+                        <button class="button button--large prepare__play" type="button">Jouer maintenant</button>
+                    </div>
+                {% endif %}
+            </div>
+
+            <p class="prepare__back"><a class="prepare__back-link" href="{{ path('app_game_lobby', {game: game.value}) }}">Retour</a> aux salons de {{ game.label|lower }}</p>
+        </section>
+    </main>
+{% endblock %}

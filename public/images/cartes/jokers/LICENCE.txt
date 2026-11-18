@@ -1,0 +1,13 @@
+Jokers Playora (rami)
+
+Le bouffon et les couleurs qui tombent de sa main proviennent de SVG-cards 4.0.2 :
+  Copyright (C) 2005 David Bellot
+  Copyright (C) 2016, 2017 Huub de Beer
+  https://github.com/htdebeer/SVG-cards
+
+Ils sont distribués sous la licence GNU Lesser General Public License,
+version 2.1 ou ultérieure : https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+Modifications apportées par Playora : nouveau fond et nouveaux coins (« JOKER » dans la police
+Bricolage Grotesque, licence SIL Open Font License), mise en page de la carte.
+Les fichiers SVG de ce dossier restent sous la même licence LGPL.

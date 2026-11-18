@@ -19,10 +19,17 @@ export default class Lobby {
         this.csrf = dataset.csrf;
         this.loginUrl = dataset.loginUrl;
         this.connected = dataset.connected === '1';
+        // Annonces (tierce, cinquante…) : belote, coinche et contrée seulement
+        this.announcements = dataset.announcements === '1';
+        this.roundsChip = dataset.roundsChip === '1';
+        // Duels solo (solitaire, Spider) : créer ou rejoindre passe par la page « Préparez-vous »
+        this.prepareUrl = dataset.prepareUrl;
+        this.prepareJoinUrl = dataset.prepareJoinUrl;
         this.state = JSON.parse(dataset.state);
 
         this.list = element.querySelector('.lobby__list');
         this.empty = element.querySelector('.lobby__empty--rooms');
+
         this.tabs = [...element.querySelectorAll('.tabs__tab')];
         this.roomsPanel = element.querySelector('#salons-liste');
         this.rulesPanel = element.querySelector('#regles');
@@ -112,18 +119,25 @@ export default class Lobby {
         const element = this.roomTemplate.content.firstElementChild.cloneNode(true);
 
         element.classList.toggle('room--mine', mine);
-        element.querySelector('.room__points').textContent = `${room.targetPoints} pts`;
-        element.querySelector('.room__rounds').textContent = room.rounds > 1 ? `${room.rounds} manches` : '1 manche';
-        element.querySelector('.room__announcements').textContent = room.announcements ? 'Annonces' : 'Sans annonces';
+        element.querySelector('.room__points').textContent = room.targetLabel ?? `${room.targetPoints} pts`;
+        const rounds = element.querySelector('.room__rounds');
+        rounds.textContent = room.rounds > 1 ? `${room.rounds} manches` : '1 manche';
+        // Solitaire : les manches sont déjà la fin de partie (« 3 manches »)
+        rounds.hidden = !this.roundsChip;
+        const announcements = element.querySelector('.room__announcements');
+        announcements.textContent = room.announcements ? 'Annonces' : 'Sans annonces';
+        // Tarot et solitaire : pas d'annonces de belote
+        announcements.hidden = !this.announcements;
         element.querySelector('.room__seats').replaceChildren(
-            ...room.seats.map((player, index) => this.seatElement(player, room.id, index + 1, mine)),
+            ...room.seats.map((player, index) => this.seatElement(player, room, index + 1, mine)),
         );
 
         return element;
     }
 
     // Sous chaque place : « Jouer » si elle est libre, « Quitter » sous la sienne, rien sinon
-    seatElement(player, room, position, mine) {
+    seatElement(player, roomData, position, mine) {
+        const room = roomData.id;
         const element = this.seatTemplate.content.firstElementChild.cloneNode(true);
         const avatar = element.querySelector('.seat__avatar');
         const name = element.querySelector('.seat__name');
@@ -167,7 +181,7 @@ export default class Lobby {
             button.textContent = 'Quitter';
             button.dataset.action = 'leave';
             button.classList.add('seat__button--leave');
-            button.classList.toggle('seat__button--hidden', !player.me);
+            button.classList.toggle('seat__button--hidden', !player.me || Boolean(this.prepareUrl));
         }
 
         if (button.classList.contains('seat__button--hidden')) {
@@ -231,7 +245,9 @@ export default class Lobby {
 
         const { room, position, action } = button.dataset;
 
-        if (action === 'leave') {
+        if (action === 'join' && this.prepareJoinUrl) {
+            window.location.assign(this.prepareJoinUrl.replace('/salons/0/', `/salons/${room}/`));
+        } else if (action === 'leave') {
             await this.send(`${this.apiUrl}/${room}/joueurs`, 'DELETE', null, button);
         } else if (action === 'bot') {
             await this.send(`${this.apiUrl}/${room}/places/${position}/robot`, 'POST', null, button);
@@ -243,9 +259,19 @@ export default class Lobby {
     async onCreate(event) {
         event.preventDefault();
         const data = new FormData(this.form);
+
+        // Duel solo : la page « Préparez-vous » confirme avant de créer (la partie commence aussitôt)
+        if (this.prepareUrl) {
+            window.location.assign(`${this.prepareUrl}?joueurs=${Number(data.get('players') ?? 2)}`);
+
+            return;
+        }
+
         const body = {
             targetPoints: Number(data.get('targetPoints')),
-            announcements: data.get('announcements') === 'on',
+            announcements: this.announcements && data.get('announcements') === 'on',
+            // Tarot : 3, 4 ou 5 joueurs
+            ...(data.get('players') ? { players: Number(data.get('players')) } : {}),
         };
 
         if (await this.send(this.apiUrl, 'POST', body, this.form.querySelector('.dialog__submit'))) {

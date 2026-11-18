@@ -1,0 +1,97 @@
+{% extends 'base.html.twig' %}
+
+{#
+    Gabarit de l'administration (style « salon de jeu ») : menu pleine hauteur à gauche, contenu sur une feuille.
+    Chaque page définit admin_id (l'id de son <main>) et admin_body.
+#}
+
+{% block metaTag %}
+    <meta name="description" content="Administration de Playora.">
+    <meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'admin']) }}{% endblock %}
+
+{% block main_id %}{% block admin_id %}admin{% endblock %}{% endblock %}
+
+{% block body %}
+    {% set route = app.request.attributes.get('_route') %}
+    <div class="admin" data-icons-url="{{ asset('images/icones/') }}">
+        {# Messages (enregistré, erreur) : bandeau sur toute la largeur, juste sous la nav du site ; posé par-dessus, rien ne bouge #}
+        <div class="admin-flash" role="status" aria-live="polite">
+            {% for type in ['success', 'error'] %}
+                {% for message in app.flashes(type) %}
+                    <p class="admin-flash__message admin-flash__message--{{ type }}">
+                        <img class="admin-flash__icon" src="{{ asset('images/icones/' ~ (type == 'success' ? 'message-succes.svg' : 'message-erreur.svg')) }}" width="22" height="22" alt="">
+                        <span class="admin-flash__text">{{ message }}</span>
+                        <button class="admin-flash__close" type="button"><span class="visually-hidden">Fermer le message</span></button>
+                    </p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        {# Le menu défile seul (indépendamment de la page) ; les liens de l'admin changent la page sans la recharger (AdminNavigation.js) #}
+        <nav class="admin__nav" aria-label="Administration">
+            <div class="admin__nav-scroll">
+                <p class="admin__nav-title">Administration</p>
+                <ul class="admin__nav-list">
+                    <li>
+                        <a class="admin__link{% if route == 'admin_dashboard' %} admin__link--active{% endif %}" href="{{ path('admin_dashboard') }}"{% if route == 'admin_dashboard' %} aria-current="page"{% endif %}>Tableau de bord</a>
+                    </li>
+                </ul>
+
+                {# Provisoire, pour les tests : les outils Docker de la machine de développement (absents en production) #}
+                {% if app.environment == 'dev' %}
+                    <div class="admin__nav-game">
+                        <span class="admin__nav-game-name">Outils de test</span>
+                        <ul class="admin__nav-list">
+                            <li><a class="admin__link admin__link--sub" href="http://127.0.0.1:8026" target="_blank" rel="noopener noreferrer">E-mails (Mailpit)<span class="visually-hidden"> (nouvel onglet)</span></a></li>
+                            <li><a class="admin__link admin__link--sub" href="http://127.0.0.1:8082" target="_blank" rel="noopener noreferrer">Base de données (phpMyAdmin)<span class="visually-hidden"> (nouvel onglet)</span></a></li>
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {# Les variables du menu sont préfixées « nav_ » : elles ne doivent jamais écraser celles de la page (page, pages…) #}
+                {% for nav_game in enum_cases('App\\Enum\\Game') %}
+                    {% set nav_active_game = game_active(nav_game) %}
+                    <div class="admin__nav-game" data-game="{{ nav_game.value }}">
+                        <span class="admin__nav-game-name">{{ nav_game.label }} <span class="admin-badge admin-badge--inactive admin__nav-badge{% if nav_active_game %} admin__nav-badge--hidden{% endif %}">hors ligne</span></span>
+                        <ul class="admin__nav-list">
+                            {# Tarot, rami, 8 américain, Golf, Président et jeux de patience (solitaire, Spider) ont leurs propres pages de statistiques (pas d'équipes) #}
+                            {% set nav_statistics = nav_game.isTarot
+                                ? {route: 'admin_tarot_statistics', params: {}, detail: 'admin_tarot_detail'}
+                                : (nav_game.isRami
+                                    ? {route: 'admin_rami_statistics', params: {}, detail: 'admin_rami_detail'}
+                                    : (nav_game.isHuit
+                                        ? {route: 'admin_huit_statistics', params: {}, detail: 'admin_huit_detail'}
+                                        : (nav_game.isGolf
+                                            ? {route: 'admin_golf_statistics', params: {}, detail: 'admin_golf_detail'}
+                                            : (nav_game.isPresident
+                                            ? {route: 'admin_president_statistics', params: {}, detail: 'admin_president_detail'}
+                                            : (nav_game.isPatience
+                                                ? {route: 'admin_patience_statistics', params: {game: nav_game.value}, detail: 'admin_patience_detail'}
+                                                : {route: 'admin_game_statistics', params: {game: nav_game.value}, detail: 'admin_game_detail'}))))) %}
+                            {% set nav_links = [
+                                {route: 'admin_game_settings', params: {game: nav_game.value}, detail: null, label: 'Réglages'},
+                                nav_statistics|merge({label: 'Statistiques'}),
+                            ] %}
+                            {% set nav_here = game is defined and game == nav_game %}
+                            {% for nav_link in nav_links %}
+                                {% set nav_active = nav_here and route in [nav_link.route, nav_link.detail] %}
+                                <li>
+                                    <a class="admin__link admin__link--sub{% if nav_active %} admin__link--active{% endif %}" href="{{ path(nav_link.route, nav_link.params) }}"{% if nav_here and route == nav_link.route %} aria-current="page"{% endif %}>{{ nav_link.label }}<span class="visually-hidden"> : {{ nav_game.label|lower }}</span></a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        </nav>
+
+        <main id="{{ block('admin_id') }}" class="admin__main">
+            <div class="admin__sheet">
+                {% block admin_body %}{% endblock %}
+            </div>
+        </main>
+    </div>
+{% endblock %}

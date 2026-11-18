@@ -1,0 +1,10 @@
+{# Nom d'un joueur dans l'admin : pseudo, robot ou compte supprimé #}
+{%- if player is null -%}
+    –
+{%- elseif player.bot -%}
+    Robot
+{%- elseif player.user is null -%}
+    Compte supprimé
+{%- else -%}
+    {{ player.user.pseudo }}
+{%- endif -%}

@@ -75,7 +75,13 @@ class BeloteGame
     {
         $elapsed = (float) $now->format('U.u') - (float) $this->turnStartedAt->format('U.u');
 
-        return max(0.0, $this->room->getTurnSeconds() - $elapsed);
+        return max(0.0, $this->duration() - $elapsed);
+    }
+
+    /** Temps accordé pour le tour en cours : prendre ou passer aux enchères, jouer une carte ensuite. */
+    public function duration(): int
+    {
+        return $this->getState()->phase->isBidding() ? $this->room->getBidSeconds() : $this->room->getTurnSeconds();
     }
 
     public function getId(): ?int
@@ -109,13 +115,17 @@ class BeloteGame
     /**
      * @param list<array<string, mixed>> $events
      */
-    public function save(BeloteState $state, array $events): void
+    public function save(BeloteState $state, array $events, bool $keepClock = false): void
     {
         $this->state = $state->toArray();
         $this->lastEvents = $events;
         ++$this->version;
-        // Chaque enregistrement passe la main à un joueur humain (les robots jouent aussitôt) : son temps démarre
-        $this->turnStartedAt = new \DateTimeImmutable();
+
+        // Chaque enregistrement passe la main à un joueur humain (les robots jouent aussitôt) : son temps démarre.
+        // Sauf quand le joueur garde la main (il vient de déclarer ses annonces) : son temps continue.
+        if (!$keepClock) {
+            $this->turnStartedAt = new \DateTimeImmutable();
+        }
         [$this->team1Score, $this->team2Score] = $state->scores;
         $this->winnerTeam = null === $state->winnerTeam ? null : $state->winnerTeam + 1;
     }

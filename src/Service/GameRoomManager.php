@@ -8,7 +8,9 @@ use App\Entity\GameRoom;
 use App\Entity\User;
 use App\Enum\Game;
 use App\Enum\RoomVisibility;
+use App\Game\Belote\Variant;
 use App\Repository\GameRoomRepository;
+use App\Repository\GameSettingRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Random\Randomizer;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -17,6 +19,10 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * Toutes les règles des salons, vérifiées par le serveur (jamais par le navigateur) :
  * un seul salon à la fois par joueur, une personne par place, fermeture quand le
  * dernier joueur part, équipes tirées au sort quand toutes les places sont prises.
+ *
+ * Jeux solo (solitaire, Spider) : duels sans robots, chacun à son rythme. La partie du créateur commence dès la
+ * création ; chaque joueur qui prend une place joue aussitôt la même donne. Le salon reste ouvert tant qu'il a
+ * des places libres (jamais fermé faute de joueurs).
  */
 final readonly class GameRoomManager
 {
@@ -31,6 +37,14 @@ final readonly class GameRoomManager
         private GameRoomRepository $rooms,
         private GameRoomNotifier $notifier,
         private BeloteTable $belote,
+        private TarotTable $tarot,
+        private PatienceTable $patience,
+        private RamiTable $rami,
+        private HuitTable $huit,
+        private GolfTable $golf,
+        private PresidentTable $president,
+        private GameSettingRepository $settings,
+        private PlayerRoom $playerRoom,
         #[Autowire(env: 'bool:PLAYORA_BOTS')]
         private bool $botsEnabled,
     ) {
@@ -53,6 +67,10 @@ final readonly class GameRoomManager
     {
         if (!$this->botsEnabled) {
             throw new \DomainException('Les robots ne sont pas activés.');
+        }
+
+        if ($room->getGame()->isPatience()) {
+            throw new \DomainException('Pas de robot dans les duels solo.');
         }
 
         $this->entityManager->wrapInTransaction(function () use ($user, $room, $position): void {
@@ -78,8 +96,14 @@ final readonly class GameRoomManager
     /**
      * @throws \DomainException
      */
-    public function create(User $host, Game $game, int $targetPoints, bool $announcements): GameRoom
+    public function create(User $host, Game $game, int $targetPoints, bool $announcements, ?int $players = null): GameRoom
     {
+        $players ??= $game->playerCount();
+
+        if (!\in_array($players, $game->playerCountChoices(), true)) {
+            throw new \DomainException('Nombre de joueurs non autorisé.');
+        }
+
         if (!\in_array($targetPoints, $game->targetPointsChoices(), true)) {
             throw new \DomainException('Nombre de points non autorisé.');
         }
@@ -87,11 +111,25 @@ final readonly class GameRoomManager
         $this->assertNotSeated($host);
 
         // Salons privés (sur invitation) : plus tard ; le code est déjà prévu en base
-        $room = new GameRoom($game, $host, $this->newInviteCode(), $targetPoints, RoomVisibility::Public, $announcements);
-        $room->getFirstFreeSeat()?->occupy($host);
+        // Réglages du jeu (page admin) au moment de la création : les parties déjà commencées ne changent pas
+        $settings = $this->settings->forGame($game);
+        $room = new GameRoom($game, $host, $this->newInviteCode(), $targetPoints, RoomVisibility::Public, $announcements, $settings->getTurnSeconds(), $settings->getBidSeconds(), $game->variant() ?? Variant::Classic, $players);
+        $room->dress($settings->getCarpet(), $settings->getCardSet(), $settings->getCardBack());
+        $seat = $room->getFirstFreeSeat() ?? throw new \LogicException('Salon sans place.');
+        $seat->occupy($host);
 
-        $this->entityManager->persist($room);
-        $this->entityManager->flush();
+        $this->entityManager->wrapInTransaction(function () use ($room, $game, $seat): void {
+            $this->entityManager->persist($room);
+            $this->entityManager->flush();
+
+            // Duel solo : la partie du créateur commence tout de suite
+            if ($game->isPatience()) {
+                $this->patience->open($room);
+                $this->patience->seat($room, $seat);
+                $this->entityManager->flush();
+            }
+        });
+
         $this->notifier->roomChanged($room);
 
         return $room;
@@ -124,7 +162,19 @@ final readonly class GameRoomManager
             }
 
             $seat->occupy($user);
-            $this->startIfFull($room);
+
+            if (!$room->getGame()->isPatience()) {
+                $this->startIfFull($room);
+
+                return;
+            }
+
+            // Duel solo : le joueur joue aussitôt la même donne ; toutes les places prises, le salon quitte la liste
+            $this->patience->seat($room, $seat);
+
+            if ($room->isFull()) {
+                $room->start();
+            }
         });
 
         $this->notifier->roomChanged($room);
@@ -138,7 +188,7 @@ final readonly class GameRoomManager
         $this->entityManager->wrapInTransaction(function () use ($user, $room): void {
             $this->rooms->lock($room);
 
-            if (!$room->isWaiting()) {
+            if (!$room->isWaiting() || $room->getGame()->isPatience()) {
                 throw new \DomainException('La partie a déjà commencé.');
             }
 
@@ -158,7 +208,7 @@ final readonly class GameRoomManager
      */
     public function markPresent(User $user): void
     {
-        $room = $this->rooms->findCurrentFor($user);
+        $room = $this->playerRoom->current($user);
 
         if (null !== $room && $room->isWaiting()) {
             $room->getSeatOf($user)?->markSeen();
@@ -176,7 +226,8 @@ final readonly class GameRoomManager
         foreach ($this->rooms->findIdsWithAbsentPlayers($game, $since) as $id) {
             $room = $this->rooms->find($id);
 
-            if (null === $room) {
+            // Duel solo : la place d'un joueur reste la sienne (sa partie est commencée ou jouée)
+            if (null === $room || $room->getGame()->isPatience()) {
                 continue;
             }
 
@@ -203,7 +254,7 @@ final readonly class GameRoomManager
     }
 
     /**
-     * 4 places prises : équipes tirées au sort, puis la partie commence.
+     * Toutes les places prises : places tirées au sort (les équipes à la belote), puis la partie commence.
      */
     private function startIfFull(GameRoom $room): void
     {
@@ -214,7 +265,17 @@ final readonly class GameRoomManager
         $this->drawTeams($room);
         $room->start();
         $this->entityManager->flush();
-        $this->belote->create($room);
+
+        $game = $room->getGame();
+
+        match (true) {
+            $game->isTarot() => $this->tarot->create($room),
+            $game->isRami() => $this->rami->create($room),
+            $game->isHuit() => $this->huit->create($room),
+            $game->isGolf() => $this->golf->create($room),
+            $game->isPresident() => $this->president->create($room),
+            default => $this->belote->create($room),
+        };
     }
 
     /**
@@ -239,7 +300,7 @@ final readonly class GameRoomManager
 
     private function assertNotSeated(User $user): void
     {
-        if (null !== $this->rooms->findCurrentFor($user)) {
+        if (null !== $this->playerRoom->current($user)) {
             throw new \DomainException('Vous êtes déjà dans un salon : quittez-le pour en rejoindre un autre.');
         }
     }

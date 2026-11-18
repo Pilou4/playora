@@ -1,0 +1,970 @@
+/* ==========================================================================
+   Duel de solitaire (style A : le tapis de la belote). Le cadre, la barre du haut, le tapis,
+   les fenêtres et les messages viennent de belote.css ; ici, la grille de jeu et le résultat final.
+   ========================================================================== */
+
+.solitaire__frame {
+    --card-w: 8.6cqw;
+    --gap: 2.2cqw;
+    --edge: 3cqw;
+    --card-h: calc(var(--card-w) * 1.4);
+}
+
+/* ---------- Barre du haut : temps, score, retour, arrêter ---------- */
+
+.solitaire__toolbar {
+    gap: 1.6cqw;
+}
+
+.solitaire__clock {
+    position: relative;
+    flex: 0 0 15cqw;
+    height: min(2.4cqw, 26px);
+    overflow: hidden;
+    border-radius: 99px;
+    background: #e9e1cf;
+}
+
+.solitaire__clock-fill {
+    --left: 1;
+
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #3fbf7f, #b9d94a 70%, #ffd23f);
+    transform: scaleX(var(--left));
+    transform-origin: left center;
+    transition: transform 0.25s linear;
+}
+
+.solitaire__clock-fill--late {
+    background: linear-gradient(90deg, #ff3d7f, #ff8a3d);
+}
+
+.solitaire__clock-text {
+    position: relative;
+    display: block;
+    color: #1b2a4a;
+    font: 800 min(1.25cqw, 0.85rem) / min(2.4cqw, 26px) var(--font-display);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.solitaire__score {
+    margin: 0 0 0 auto;
+    color: #1b2a4a;
+    font: 600 min(1.2cqw, 0.85rem) var(--font-body);
+    white-space: nowrap;
+}
+
+.solitaire__score-value {
+    font: 800 min(1.7cqw, 1.15rem) var(--font-display);
+    font-variant-numeric: tabular-nums;
+}
+
+.solitaire__tools {
+    gap: 0.8cqw;
+}
+
+.solitaire__undo,
+.solitaire__stop {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: min(2.8cqw, 32px);
+    padding: 0 min(1.2cqw, 14px);
+    border: 0;
+    border-radius: 99px;
+    font: 700 min(1.1cqw, 0.8rem) var(--font-body);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.solitaire__undo {
+    background: #efe7d6;
+    color: #1b2a4a;
+}
+
+.solitaire__undo:hover:not(:disabled) {
+    background: #e5dac4;
+}
+
+.solitaire__undo-cost {
+    font-size: 0.85em;
+    opacity: 0.75;
+}
+
+.solitaire__stop {
+    background: linear-gradient(#ff7a45, #ff5a2d);
+    color: #fff;
+}
+
+.solitaire__undo:disabled,
+.solitaire__stop:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ---------- Grille : talon, cartes retournées, familles, piles de tri ---------- */
+
+.solitaire__top,
+.solitaire__tableau {
+    position: absolute;
+    /* La grille au centre du tapis : talon, familles et piles alignés sur les mêmes colonnes */
+    left: max(var(--edge), calc(50% - (7 * var(--card-w) + 6 * var(--gap)) / 2));
+    display: grid;
+    grid-template-columns: repeat(7, var(--card-w));
+    gap: var(--gap);
+    width: calc(7 * var(--card-w) + 6 * var(--gap));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.solitaire__top {
+    top: 2.4cqw;
+    height: var(--card-h);
+}
+
+.solitaire__tableau {
+    top: calc(4.8cqw + var(--card-h));
+    bottom: 2cqw;
+}
+
+.solitaire__stock,
+.solitaire__foundation {
+    position: relative;
+    width: var(--card-w);
+    height: var(--card-h);
+    padding: 0;
+    border: 0.15cqw dashed rgba(255, 255, 255, 0.45);
+    border-radius: 0.8cqw;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.solitaire__stock {
+    border-color: transparent;
+    background: none;
+    cursor: pointer;
+}
+
+.solitaire__stock:disabled {
+    cursor: default;
+}
+
+/* Les dernières cartes du talon sont toutes visibles : le talon ne se clique plus */
+.solitaire__stock--done {
+    cursor: default;
+}
+
+.solitaire__stock--empty {
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.solitaire__stock .card {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    filter: drop-shadow(0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.3));
+}
+
+.solitaire__recycle {
+    color: rgba(255, 255, 255, 0.85);
+    font: 800 1.4cqw var(--font-display);
+}
+
+.solitaire__waste {
+    position: relative;
+    grid-column: 2 / span 2;
+    height: var(--card-h);
+}
+
+.solitaire__waste .solitaire__card {
+    position: absolute;
+    top: 0;
+    left: calc(var(--i, 0) * 1.6cqw);
+}
+
+.solitaire__foundations {
+    display: contents;
+}
+
+.solitaire__foundation {
+    display: grid;
+    place-items: center;
+}
+
+.solitaire__foundation:first-child {
+    grid-column: 4;
+}
+
+.solitaire__foundation-mark {
+    color: rgba(255, 255, 255, 0.4);
+    font: 800 2.6cqw var(--font-display);
+}
+
+.solitaire__foundation .solitaire__card {
+    position: absolute;
+    inset: -0.15cqw;
+}
+
+.solitaire__column {
+    position: relative;
+    border-radius: 0.8cqw;
+    transition: box-shadow 0.15s ease;
+}
+
+/* Une pile vide garde sa place, en pointillé */
+.solitaire__column::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--card-h);
+    border: 0.15cqw dashed rgba(255, 255, 255, 0.25);
+    border-radius: 0.8cqw;
+}
+
+.solitaire__column .solitaire__card {
+    position: absolute;
+    top: var(--y, 0);
+    left: 0;
+    z-index: var(--z, 1);
+}
+
+/* ---------- Cartes ---------- */
+
+.solitaire__card {
+    padding: 0;
+    border: 0;
+    box-shadow: 0 0.15cqw 0.4cqw rgba(0, 0, 0, 0.28);
+    user-select: none;
+    touch-action: none;
+}
+
+.solitaire__card--movable {
+    cursor: grab;
+}
+
+.solitaire__card--movable:focus-visible {
+    outline: 0.3cqw solid #ffd23f;
+    outline-offset: 0.15cqw;
+}
+
+/* À l'arrivée sur la table : les cartes n'apparaissent qu'avec leurs images (PatienceTable.js) */
+.solitaire__felt--loading .card {
+    visibility: hidden;
+}
+
+/* Jeu résolu : chaque famille sautille, l'une après l'autre (--n : sa place), avant le résultat */
+.solitaire__felt--won .solitaire__foundation .solitaire__card:last-child {
+    z-index: 40;
+    animation: solitaire-won 0.7s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+    animation-delay: calc(var(--n, 0) * 0.12s);
+}
+
+@keyframes solitaire-won {
+    0% {
+        transform: none;
+    }
+
+    35% {
+        transform: translateY(-22%) rotate(-5deg) scale(1.06);
+        box-shadow: 0 0 0 0.3cqw #ffd23f, 0 1.2cqw 2.4cqw rgba(0, 0, 0, 0.35);
+    }
+
+    70% {
+        transform: translateY(0) rotate(2deg);
+    }
+
+    100% {
+        transform: none;
+    }
+}
+
+/* Les messages passent au-dessus des cartes qui bougent (cartes qui montent, familles qui sautillent) */
+.solitaire .belote__toast {
+    z-index: 60;
+}
+
+/* Pendant qu'elle glisse vers sa nouvelle place, la carte passe au-dessus des autres */
+.solitaire__card--moving {
+    z-index: 40;
+}
+
+.solitaire__card--lifted {
+    visibility: hidden;
+}
+
+.solitaire--dragging,
+.solitaire--dragging .solitaire__card--movable {
+    cursor: grabbing;
+}
+
+/* Les cartes qui suivent le pointeur */
+.solitaire__drag {
+    position: absolute;
+    top: var(--y, 0);
+    left: var(--x, 0);
+    z-index: 50;
+    display: none;
+    width: var(--card-w);
+    pointer-events: none;
+}
+
+.solitaire__drag--active {
+    display: block;
+}
+
+.solitaire__drag .solitaire__card {
+    position: absolute;
+    top: var(--y, 0);
+    left: 0;
+    box-shadow: 0 1.2cqw 2.4cqw rgba(0, 0, 0, 0.35);
+}
+
+
+/* ---------- Annonce de manche, attente, fin de partie ---------- */
+
+.solitaire__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 45;
+    display: grid;
+    place-items: center;
+    background: rgba(8, 30, 32, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.solitaire__overlay--visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease;
+}
+
+.solitaire__panel {
+    min-width: 34cqw;
+    max-width: 60cqw;
+    padding: 2.6cqw 3.4cqw;
+    border-radius: 1.6cqw;
+    background: #fffaf0;
+    color: #1b2a4a;
+    text-align: center;
+    box-shadow: 0 1.6cqw 4cqw rgba(0, 0, 0, 0.35);
+}
+
+.solitaire__panel-title {
+    margin: 0;
+    font: 800 2.8cqw var(--font-display);
+}
+
+.solitaire__panel-text {
+    margin: 0.8cqw 0 0;
+    font: 600 1.3cqw var(--font-body);
+}
+
+.solitaire__panel-text:empty {
+    display: none;
+}
+
+.solitaire__results {
+    display: grid;
+    gap: 0.4cqw;
+    margin: 1.2cqw 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.solitaire__results:empty {
+    display: none;
+}
+
+.solitaire__result {
+    padding: 0.6cqw 1cqw;
+    border-radius: 0.6cqw;
+    background: #f3ecdd;
+    font: 700 1.2cqw var(--font-body);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Le lien vers les salons n'apparaît qu'à la fin de la partie */
+.solitaire__panel-link {
+    display: none;
+    margin-top: 1.8cqw;
+}
+
+.solitaire__panel-link--visible {
+    display: inline-flex;
+}
+
+/* Résultat final : le détail du score, le total en grand, puis les autres joueurs */
+.solitaire__overlay--result .solitaire__panel {
+    min-width: 40cqw;
+}
+
+.solitaire__details {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: center;
+    gap: 0.4cqw 1.2cqw;
+    margin: 1.6cqw 0 0;
+    font: 600 1.25cqw var(--font-body);
+}
+
+.solitaire__details:empty {
+    display: none;
+}
+
+.solitaire__detail-label {
+    text-align: right;
+}
+
+.solitaire__detail-value {
+    margin: 0;
+    color: #c2410c;
+    font-weight: 700;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+}
+
+.solitaire__total {
+    margin: 1.4cqw 0 0;
+    color: #be185d;
+    font: 800 3.4cqw var(--font-display);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.solitaire__total:empty {
+    display: none;
+}
+
+.solitaire__result--winner {
+    box-shadow: inset 0 0 0 0.2cqw #ffd23f;
+}
+
+/* ---------- Téléphone ---------- */
+
+@media (max-width: 640px) {
+    .solitaire__frame {
+        --card-w: calc((100cqw - 40px) / 7);
+        --gap: 4px;
+        --edge: 8px;
+    }
+
+    /* Deux lignes : le titre, les règles et « Quitter » ; puis le temps, le score, « Retour » et « Arrêter » */
+    .solitaire__toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto auto;
+        grid-template-areas:
+            "title title rules quit"
+            "clock score undo stop";
+        gap: 6px 8px;
+        height: auto;
+        padding: 8px 12px;
+    }
+
+    .solitaire__toolbar .belote__title {
+        grid-area: title;
+    }
+
+    .solitaire__tools {
+        display: contents;
+    }
+
+    .solitaire__tools .belote__tool--rules {
+        grid-area: rules;
+    }
+
+    .solitaire__tools .belote__quit {
+        grid-area: quit;
+    }
+
+    .solitaire__tools .belote__tool--fullscreen {
+        display: none;
+    }
+
+    .solitaire__undo {
+        grid-area: undo;
+    }
+
+    .solitaire__stop {
+        grid-area: stop;
+    }
+
+    .solitaire__clock {
+        grid-area: clock;
+        align-self: center;
+        height: 22px;
+    }
+
+    .solitaire__clock-text {
+        font-size: 12px;
+        line-height: 22px;
+    }
+
+    .solitaire__score {
+        grid-area: score;
+        align-self: center;
+        margin: 0;
+        font-size: 12px;
+    }
+
+    .solitaire__score-value {
+        font-size: 15px;
+    }
+
+    .solitaire__undo,
+    .solitaire__stop {
+        height: 30px;
+        padding: 0 10px;
+        font-size: 12px;
+    }
+
+    .solitaire__felt {
+        inset: 82px 0 0;
+    }
+
+    .solitaire__top {
+        top: 10px;
+    }
+
+    .solitaire__tableau {
+        top: calc(20px + var(--card-h));
+        bottom: 12px;
+    }
+
+    .solitaire__stock,
+    .solitaire__foundation,
+    .solitaire__column,
+    .solitaire__column::before {
+        border-radius: 5px;
+    }
+
+    .solitaire__waste .solitaire__card {
+        left: calc(var(--i, 0) * 10px);
+    }
+
+    .solitaire__recycle {
+        font-size: 13px;
+    }
+
+    .solitaire__foundation-mark {
+        font-size: 18px;
+    }
+
+    .solitaire__panel {
+        min-width: 0;
+        max-width: calc(100% - 32px);
+        padding: 20px;
+        border-radius: 16px;
+    }
+
+    .solitaire__panel-title {
+        font-size: 22px;
+    }
+
+    .solitaire__panel-text,
+    .solitaire__result {
+        font-size: 14px;
+    }
+
+    .solitaire__panel-link {
+        margin-top: 14px;
+    }
+
+    .solitaire__overlay--result .solitaire__panel {
+        min-width: 0;
+    }
+
+    .solitaire__details {
+        gap: 4px 10px;
+        margin-top: 12px;
+        font-size: 13px;
+    }
+
+    .solitaire__total {
+        margin-top: 10px;
+        font-size: 28px;
+    }
+
+    .solitaire__result--winner {
+        box-shadow: inset 0 0 0 2px #ffd23f;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .solitaire__clock-fill,
+    .solitaire__overlay,
+    .solitaire__undo,
+    .solitaire__stop {
+        transition: none;
+    }
+
+    .solitaire__felt--won .solitaire__foundation .solitaire__card:last-child {
+        animation: none;
+    }
+}
+
+/* ==========================================================================
+   Visuel A « bois » (solitaire) : toute la page est une table en bois (pas de blanc autour), un plateau creusé
+   au centre, les cases des familles gravées du symbole de leur couleur ; en haut, « Retour » en rouge à gauche,
+   le ticket du score et du temps (sa jauge dedans) au centre, les outils à droite.
+   Sur téléphone : le ticket en haut, le plateau sur toute la hauteur, les boutons en bas, sous le pouce.
+   ========================================================================== */
+
+.solitaire--bois {
+    --wood-dark: #5c2b12;
+    --wood: #7a3e1d;
+    --tray-deep: #7a3a16;
+    --ink: #6b3a17;
+    --cream: #f6e3c6;
+    --cream-deep: #ecd0a6;
+    --cream-edge: #c99a62;
+    --wood-bg:
+        radial-gradient(ellipse at 50% 40%, rgba(255, 190, 120, 0.18), transparent 60%),
+        repeating-linear-gradient(92deg, rgba(0, 0, 0, 0.06) 0 2px, transparent 2px 9px),
+        repeating-linear-gradient(88deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 23px),
+        linear-gradient(180deg, var(--wood), var(--wood-dark));
+
+    min-height: 100svh;
+    padding: 0;
+    background: var(--wood-bg);
+}
+
+.solitaire--bois .solitaire__frame {
+    width: min(100%, calc(100svh * 1.6));
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.solitaire--bois .solitaire__frame:fullscreen {
+    width: 100%;
+    background: var(--wood-bg);
+}
+
+/* ---------- Barre du haut ---------- */
+
+.solitaire--bois .solitaire__toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 1.6cqw;
+    height: 7cqw;
+    padding: 0 6cqw;
+    background: none;
+    color: var(--cream);
+}
+
+.solitaire--bois .solitaire__undo {
+    justify-self: end;
+}
+
+.solitaire--bois .solitaire__tools {
+    justify-self: end;
+}
+
+/* Le ticket : « SCORE 1 000 » ┆ « TEMPS ⌛ 4:55 » et sa jauge, tout dans le même ticket crème */
+.solitaire--bois .solitaire__ticket {
+    display: flex;
+    align-items: center;
+    height: 3.8cqw;
+    border-radius: 0.8cqw;
+    background: linear-gradient(var(--cream), var(--cream-deep));
+    box-shadow: 0 0.5cqw 1.2cqw rgba(0, 0, 0, 0.35), inset 0 0 0 0.15cqw var(--cream-edge);
+    color: var(--ink);
+}
+
+.solitaire--bois .solitaire__score,
+.solitaire--bois .solitaire__clock-label {
+    color: var(--ink);
+    font: 700 1.3cqw var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.solitaire--bois .solitaire__score {
+    display: flex;
+    align-items: center;
+    gap: 0.9cqw;
+    margin: 0;
+    padding: 0 1.8cqw;
+}
+
+.solitaire--bois .solitaire__score-value,
+.solitaire--bois .solitaire__clock-text {
+    color: #c2410c;
+    font: 800 1.7cqw / 1 var(--font-display);
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.solitaire--bois .solitaire__clock {
+    display: flex;
+    align-items: center;
+    flex: none;
+    gap: 0.8cqw;
+    height: 100%;
+    padding: 0 1.8cqw;
+    overflow: visible;
+    border-left: 0.15cqw dashed var(--cream-edge);
+    border-radius: 0;
+    background: none;
+}
+
+.solitaire--bois .solitaire__clock-icon {
+    width: 1.5cqw;
+    height: auto;
+}
+
+.solitaire--bois .solitaire__clock-text {
+    display: inline-block;
+    min-width: 3.4cqw;
+}
+
+/* La jauge : un rail creusé dans le ticket, le rouge se vide de droite à gauche */
+.solitaire--bois .solitaire__clock-bar {
+    position: relative;
+    width: 10cqw;
+    height: 1.1cqw;
+    overflow: hidden;
+    border-radius: 99px;
+    background: #dcc19b;
+    box-shadow: inset 0 0.1cqw 0.25cqw rgba(107, 58, 23, 0.45);
+}
+
+.solitaire--bois .solitaire__clock-fill {
+    border-radius: inherit;
+    background: linear-gradient(#e0473f, #b32b25);
+}
+
+.solitaire--bois .solitaire__clock-fill--late {
+    background: linear-gradient(#ff5a4f, #d1261f);
+}
+
+/* « Retour » : le bouton rouge, comme un tampon ; les autres boutons couleur crème */
+.solitaire--bois .solitaire__undo {
+    background: linear-gradient(#d6453c, #a92a24);
+    color: #fff;
+    box-shadow: inset 0 0 0 0.15cqw #f2c28b, 0 0.3cqw 0.8cqw rgba(0, 0, 0, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.solitaire--bois .solitaire__undo img {
+    filter: brightness(0) invert(1);
+}
+
+.solitaire--bois .solitaire__undo:hover:not(:disabled) {
+    background: linear-gradient(#e0544a, #b3302a);
+}
+
+.solitaire--bois .solitaire__stop,
+.solitaire--bois .belote__tool,
+.solitaire--bois .belote__quit {
+    background: linear-gradient(var(--cream), var(--cream-deep));
+    color: var(--ink);
+    box-shadow: inset 0 0 0 0.12cqw var(--cream-edge), 0 0.3cqw 0.8cqw rgba(0, 0, 0, 0.3);
+}
+
+.solitaire--bois .belote__tool:hover,
+.solitaire--bois .belote__quit:hover {
+    background: var(--cream-deep);
+}
+
+/* ---------- Le plateau : un creux de bois clair au milieu de la table ---------- */
+
+.solitaire--bois .solitaire__felt {
+    inset: 7cqw 6cqw 2.4cqw;
+    border-radius: 2cqw;
+    background: radial-gradient(ellipse at 50% 30%, #b8692f, #93491d 70%, var(--tray-deep));
+    box-shadow:
+        inset 0 0 0 0.25cqw rgba(60, 25, 8, 0.6),
+        inset 0 0 3cqw rgba(40, 15, 4, 0.55),
+        0 1.4cqw 3cqw rgba(0, 0, 0, 0.45);
+}
+
+.solitaire--bois .solitaire__felt::before {
+    border-radius: inherit;
+    background: repeating-linear-gradient(91deg, rgba(0, 0, 0, 0.05) 0 2px, transparent 2px 11px);
+    opacity: 0.8;
+    mix-blend-mode: normal;
+}
+
+.solitaire--bois .solitaire__felt::after {
+    border-radius: inherit;
+    background: radial-gradient(120% 100% at 50% 40%, transparent 60%, rgba(30, 10, 2, 0.3));
+}
+
+/* Les cases creusées : familles (avec le symbole de leur couleur), talon vide, pile vide */
+.solitaire--bois .solitaire__foundation,
+.solitaire--bois .solitaire__stock--empty,
+.solitaire--bois .solitaire__column::before {
+    border: 0;
+    background: rgba(60, 25, 8, 0.28);
+    box-shadow: inset 0 0.3cqw 0.8cqw rgba(30, 10, 2, 0.55), inset 0 -1px 0 rgba(255, 220, 180, 0.2);
+}
+
+.solitaire--bois .solitaire__foundation-mark {
+    color: rgba(60, 25, 8, 0.45);
+    font: 400 4cqw / 1 var(--font-body);
+}
+
+.solitaire--bois .solitaire__recycle {
+    color: rgba(255, 230, 200, 0.85);
+}
+
+.solitaire--bois .solitaire__card {
+    box-shadow: 0 0.25cqw 0.7cqw rgba(30, 10, 2, 0.45);
+}
+
+.solitaire--bois .solitaire__overlay {
+    border-radius: 2cqw;
+    background: rgba(40, 15, 4, 0.55);
+}
+
+/* Fenêtre du résultat : la même couleur crème que le ticket */
+.solitaire--bois .solitaire__panel {
+    background: linear-gradient(var(--cream), #f1dcb8);
+    color: var(--ink);
+    box-shadow: 0 1.6cqw 4cqw rgba(0, 0, 0, 0.45), inset 0 0 0 0.2cqw var(--cream-edge);
+}
+
+.solitaire--bois .solitaire__result {
+    background: rgba(255, 255, 255, 0.55);
+}
+
+/* ---------- Téléphone : le ticket en haut, le plateau sur toute la hauteur, les boutons en bas ---------- */
+
+@media (max-width: 640px) {
+    .solitaire--bois .solitaire__frame {
+        --card-w: calc((100cqw - 12px - 2 * var(--edge) - 6 * var(--gap)) / 7);
+        --gap: 4px;
+        --edge: 6px;
+
+        width: 100%;
+        height: 100svh;
+        aspect-ratio: auto;
+    }
+
+    /* La barre couvre tout le cadre (sans gêner les clics sur les cartes) : le ticket en haut, les boutons en bas */
+    .solitaire--bois .solitaire__toolbar {
+        inset: 0;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas:
+            "ticket ticket"
+            ". ."
+            "undo tools";
+        gap: 0 8px;
+        height: auto;
+        padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+        pointer-events: none;
+    }
+
+    .solitaire--bois .solitaire__toolbar > * {
+        pointer-events: auto;
+    }
+
+    .solitaire--bois .solitaire__ticket {
+        grid-area: ticket;
+        height: 42px;
+        border-radius: 10px;
+    }
+
+    .solitaire--bois .solitaire__score,
+    .solitaire--bois .solitaire__clock-label {
+        font-size: 11px;
+    }
+
+    .solitaire--bois .solitaire__score {
+        gap: 6px;
+        padding: 0 12px;
+    }
+
+    .solitaire--bois .solitaire__score-value,
+    .solitaire--bois .solitaire__clock-text {
+        min-width: 0;
+        font-size: 16px;
+    }
+
+    .solitaire--bois .solitaire__clock {
+        flex: 1;
+        gap: 6px;
+        padding: 0 12px;
+        border-left-width: 2px;
+    }
+
+    .solitaire--bois .solitaire__clock-icon {
+        width: 15px;
+    }
+
+    .solitaire--bois .solitaire__clock-bar {
+        flex: 1;
+        width: auto;
+        height: 8px;
+    }
+
+    .solitaire--bois .solitaire__undo {
+        grid-area: undo;
+        justify-self: start;
+    }
+
+    .solitaire--bois .solitaire__tools {
+        display: flex;
+        grid-area: tools;
+        gap: 6px;
+    }
+
+    .solitaire--bois .solitaire__undo,
+    .solitaire--bois .solitaire__stop,
+    .solitaire--bois .belote__quit {
+        height: 42px;
+        padding: 0 14px;
+        border-radius: 12px;
+        font-size: 13px;
+    }
+
+    .solitaire--bois .belote__tool {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+    }
+
+    .solitaire--bois .solitaire__undo-cost {
+        display: none;
+    }
+
+    /* Le plateau prend toute la place entre le ticket et les boutons ; les piles s'étalent plus en hauteur */
+    .solitaire--bois .solitaire__felt {
+        --fan: 1.9;
+
+        inset: 62px 6px calc(62px + env(safe-area-inset-bottom));
+        border-radius: 14px;
+    }
+
+    .solitaire--bois .solitaire__top {
+        top: 10px;
+    }
+
+    .solitaire--bois .solitaire__tableau {
+        top: calc(22px + var(--card-h));
+    }
+
+    .solitaire--bois .solitaire__foundation-mark {
+        font-size: 26px;
+    }
+
+    .solitaire--bois .solitaire__overlay {
+        border-radius: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .solitaire--bois .solitaire__clock-fill {
+        transition: none;
+    }
+}

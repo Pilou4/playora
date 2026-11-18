@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Résultat du duel n° {{ duel.id }} : {{ duel.gameLabel|lower }} | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Le classement de votre duel de {{ duel.gameLabel|lower }} sur Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'games']) }}{% endblock %}
+
+{% block main_id %}resultat-duel{% endblock %}
+
+{% block body %}
+    {# Le classement est redessiné par DuelResult.js (mêmes balises) tant que quelqu'un joue encore #}
+    {% set me = duel.ranking|filter(player => player.me)|first %}
+    {% set best = duel.ranking|filter(player => player.winner)|first %}
+    <main id="resultat-duel" class="duel-result"
+          data-api-url="{{ path('api_duel_result', {id: duel.id}) }}"
+          data-state="{{ duel|json_encode }}">
+        <div class="duel-result__box">
+            <p class="duel-result__game">{{ duel.gameLabel }} · duel n° {{ duel.id }}</p>
+            <h1 class="duel-result__title">Résultat du duel</h1>
+
+            <p class="duel-result__status" aria-live="polite">
+                {%- if not duel.mineFinished -%}
+                    Votre partie est en cours.
+                {%- elseif duel.status == 'termine' -%}
+                    {{ best ? (best.me ? 'Vous avez gagné le duel !' : best.pseudo ~ ' gagne le duel.') : 'Égalité !' }}
+                {%- else -%}
+                    Le duel continue : le classement se met à jour tout seul.
+                {%- endif -%}
+            </p>
+
+            <ol class="duel-result__ranking" aria-label="Classement">
+                {% for player in duel.ranking %}
+                    <li class="duel-result__player{% if player.me %} duel-result__player--me{% endif %}{% if player.winner %} duel-result__player--winner{% endif %}{% if player.state == 'libre' %} duel-result__player--free{% endif %}">
+                        <span class="duel-result__rank{% if player.rank is null %} duel-result__rank--none{% endif %}">{{ player.rank ?? '–' }}</span>
+                        <span class="duel-result__pseudo">{{ player.pseudo }}{% if player.me %} <span class="duel-result__you">(vous)</span>{% endif %}</span>
+                        <span class="duel-result__score">
+                            {%- if player.score is not null -%}
+                                {{ player.score|number_format(0, ',', ' ') }} points
+                            {%- elseif player.state == 'en-cours' -%}
+                                <span class="duel-result__playing">joue<span class="duel-result__dots" aria-hidden="true"><span class="duel-result__dot"></span><span class="duel-result__dot"></span><span class="duel-result__dot"></span></span></span>
+                            {%- elseif player.state == 'libre' -%}
+                                en attente d’un joueur
+                            {%- else -%}
+                                a fini
+                            {%- endif -%}
+                        </span>
+                    </li>
+                {% endfor %}
+            </ol>
+
+            <div class="duel-result__actions">
+                {% if not duel.mineFinished %}
+                    <a class="button button--brand" href="{{ path('app_game_play', {game: duel.game, id: duel.id}) }}">Reprendre ma partie</a>
+                {% else %}
+                    <a class="button button--brand" href="{{ path('app_game_lobby', {game: duel.game}) }}">Rejouer</a>
+                {% endif %}
+                <a class="button button--light" href="{{ path('app_my_duels') }}">Toutes mes parties</a>
+            </div>
+        </div>
+    </main>
+{% endblock %}

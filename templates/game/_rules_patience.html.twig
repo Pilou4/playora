@@ -1,0 +1,81 @@
+{# Règles du FreeCell, de la Pyramide et du Golf solitaire (duel solo, 2 à 5 joueurs) : page des salons et fenêtre
+   des règles d'une table. game : le jeu (App\Enum\Game). #}
+{% set rules = {
+    'freecell': {
+        summary: 'Les 52 cartes sont <strong>toutes visibles</strong> sur 8 colonnes. Rangez-les sur les quatre <strong>familles</strong>, de l’As au Roi, en vous aidant des <strong>4 cellules libres</strong>.',
+        steps: [
+            {title: 'Colonnes', text: 'Posez une carte sur une carte de couleur opposée, d’une hauteur juste au-dessus (un 9 rouge sur un 10 noir). N’importe quelle carte va sur une colonne vide.'},
+            {title: 'Cellules libres', text: 'Chaque cellule garde une carte de côté. Plusieurs cartes bien rangées se déplacent ensemble s’il y a assez de cellules et de colonnes vides.'},
+            {title: 'Familles', text: 'Glissez une carte sur sa famille, ou cliquez dessus : elle va à la meilleure place. Les cartes dont plus personne n’a besoin montent toutes seules.'},
+        ],
+        points: [
+            {name: 'Carte rangée', detail: 'sur sa famille', value: '+1 000'},
+            {name: 'Tout rangé', detail: 'les 52 cartes', value: '+10 000'},
+        ],
+    },
+    'pyramide': {
+        summary: 'Une <strong>pyramide de 28 cartes</strong> : enlevez deux cartes libres dont les valeurs font <strong>13</strong>. Videz la pyramide pour gagner.',
+        steps: [
+            {title: 'Paires de 13', text: 'As 1, 2 à 10 leur valeur, Valet 11, Dame 12. Une Dame part avec un As, un Valet avec un 2, un 7 avec un 6… Le Roi (13) part tout seul.'},
+            {title: 'Cartes libres', text: 'Une carte est libre quand plus aucune carte ne la couvre. Cliquez sur une carte libre, puis sur celle qui fait 13 avec elle (ou glissez l’une sur l’autre).'},
+            {title: 'Talon', text: 'Touchez le talon pour retourner une carte : celle du dessus de la défausse se joue aussi. Le talon repasse 2 fois.'},
+        ],
+        points: [
+            {name: 'Carte de la pyramide', detail: 'enlevée', value: '+1 000'},
+            {name: 'Carte de la défausse', detail: 'enlevée', value: '+200'},
+            {name: 'Pyramide vidée', detail: 'les 28 cartes', value: '+10 000'},
+        ],
+    },
+    'golf-solitaire': {
+        summary: '<strong>7 colonnes de 5 cartes</strong> visibles et une pile au centre : posez sur la pile une carte d’une hauteur de <strong>plus ou de moins</strong>. Videz les 7 colonnes pour gagner.',
+        steps: [
+            {title: 'Sur la pile', text: 'La carte du dessus d’une colonne va sur la pile si elle a une hauteur de plus ou de moins (un 8 ou un 6 sur un 7), quelle que soit sa couleur. Pas de passage du Roi à l’As.'},
+            {title: 'Enchaîner', text: 'Cliquez sur une carte jouable : elle part sur la pile, et la suivante peut repartir dessus. Les longues séries rapportent gros.'},
+            {title: 'Talon', text: 'Plus rien à jouer ? Touchez le talon : une nouvelle carte vient sur la pile. Il n’y a qu’un passage.'},
+        ],
+        points: [
+            {name: 'Carte jouée', detail: 'sur la pile', value: '+1 000'},
+            {name: 'Colonnes vidées', detail: 'les 35 cartes', value: '+10 000'},
+        ],
+    },
+}[game.value] %}
+{% if in_dialog|default(false) %}
+<section class="rules rules--dialog">
+{% else %}
+<section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
+{% endif %}
+    <h2 id="regles-titre" class="visually-hidden">Règles du {{ game.label }}</h2>
+    <div class="rules__content">
+
+    <div class="rules__intro">
+        <article class="rules__summary">
+            <h3 class="rules__heading rules__heading--large">{{ game.label }} en 30 secondes</h3>
+            <p class="rules__summary-text">De 2 à 5 joueurs : tous reçoivent <strong>exactement les mêmes cartes</strong> et ont <strong>5 minutes</strong>. {{ rules.summary|raw }} Le meilleur score l’emporte.</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading">Comment jouer</h3>
+            <ol class="rules__steps">
+                {% for step in rules.steps %}
+                    <li class="rules__step">
+                        <span class="rules__step-number" aria-hidden="true">{{ loop.index }}</span>
+                        <div><p class="rules__step-title">{{ step.title }}</p><p class="rules__text">{{ step.text }}</p></div>
+                    </li>
+                {% endfor %}
+            </ol>
+        </article>
+    </div>
+
+    <article class="rules__box">
+        <h3 class="rules__heading rules__heading--medium">Points</h3>
+        <dl class="rules__announces">
+            {% for point in rules.points %}
+                <div class="rules__announce"><dt class="rules__announce-name">{{ point.name }}</dt><dd class="rules__announce-detail">{{ point.detail }}</dd><dd class="rules__announce-points">{{ point.value }}</dd></div>
+            {% endfor %}
+            <div class="rules__announce"><dt class="rules__announce-name">Temps restant</dt><dd class="rules__announce-detail">tout rangé : par seconde</dd><dd class="rules__announce-points">+150</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Arrêter ou quitter avant</dt><dd class="rules__announce-detail">par seconde restante</dd><dd class="rules__announce-points">+1</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Retour</dt><dd class="rules__announce-detail">annuler le dernier coup</dd><dd class="rules__announce-points">−1 000</dd></div>
+        </dl>
+    </article>
+
+    </div>
+</section>

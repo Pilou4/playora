@@ -58,6 +58,13 @@ class BeloteDeal
     #[ORM\Column(nullable: true)]
     private ?int $capotTeam;
 
+    /** Coinche et contrée : contrat annoncé (null en belote) et multiplicateur (coinché 2, surcoinché 4). */
+    #[ORM\Column(nullable: true)]
+    private ?int $contract = null;
+
+    #[ORM\Column(options: ['default' => 1])]
+    private int $multiplier = 1;
+
     #[ORM\Column]
     private \DateTimeImmutable $playedAt;
 
@@ -67,12 +74,15 @@ class BeloteDeal
         $this->number = $deal->number;
         $this->dealer = $deal->dealer + 1;
         $this->taker = $deal->taker + 1;
-        $this->trump = $deal->trump->value;
+        // Couleur d'atout, ou « tout-atout » / « sans-atout » à la coinche
+        $this->trump = $deal->trump?->value ?? $deal->mode->value;
         $this->outcome = $deal->outcome->value;
         [$this->team1CardPoints, $this->team2CardPoints] = $deal->cardPoints;
         [$this->team1Scored, $this->team2Scored] = $deal->scored;
         $this->beloteTeam = null === $deal->beloteTeam ? null : $deal->beloteTeam + 1;
         $this->capotTeam = null === $deal->capotTeam ? null : $deal->capotTeam + 1;
+        $this->contract = $deal->contract;
+        $this->multiplier = $deal->multiplier;
         $this->playedAt = new \DateTimeImmutable();
     }
 
@@ -94,5 +104,59 @@ class BeloteDeal
     public function getOutcome(): string
     {
         return $this->outcome;
+    }
+
+    /** Place du donneur (1 à 4). */
+    public function getDealer(): int
+    {
+        return $this->dealer;
+    }
+
+    /** Place du preneur (1 à 4). */
+    public function getTaker(): int
+    {
+        return $this->taker;
+    }
+
+    public function getTrump(): string
+    {
+        return $this->trump;
+    }
+
+    /** Points des cartes ramassées par chaque équipe (1 et 2). */
+    public function getCardPoints(int $team): int
+    {
+        return 1 === $team ? $this->team1CardPoints : $this->team2CardPoints;
+    }
+
+    /** Points marqués au score par chaque équipe (1 et 2). */
+    public function getScored(int $team): int
+    {
+        return 1 === $team ? $this->team1Scored : $this->team2Scored;
+    }
+
+    public function getBeloteTeam(): ?int
+    {
+        return $this->beloteTeam;
+    }
+
+    public function getCapotTeam(): ?int
+    {
+        return $this->capotTeam;
+    }
+
+    public function getContract(): ?int
+    {
+        return $this->contract;
+    }
+
+    public function getMultiplier(): int
+    {
+        return $this->multiplier;
+    }
+
+    public function getPlayedAt(): \DateTimeImmutable
+    {
+        return $this->playedAt;
     }
 }

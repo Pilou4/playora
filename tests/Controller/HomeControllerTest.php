@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Enum\Game;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -61,10 +62,25 @@ final class HomeControllerTest extends WebTestCase
 
     public function testGamesAreListed(): void
     {
-        self::assertSelectorCount(4, '.games__list .game');
+        // Tous les jeux (À plusieurs, puis En duel : solitaires, Spider, FreeCell, Pyramide, Golf solitaire) : tous jouables
+        self::assertSelectorCount(\count(Game::cases()), '.games__list .game');
         self::assertSelectorTextContains('.game--orange .game__name', 'Belote');
-        self::assertSelectorCount(1, '.games__list a.button');
-        self::assertSelectorCount(3, '.game__soon');
+        self::assertSelectorCount(\count(Game::cases()), '.games__list a.button');
+        self::assertSelectorExists('.games__list a[href="/jeux/rami"]');
+        self::assertSelectorExists('.games__list a[href="/jeux/huit-americain"]');
+        self::assertSelectorExists('.games__list a[href="/jeux/golf"]');
+        self::assertSelectorCount(0, '.game__soon');
+
+        // Deux groupes : les jeux à plusieurs, puis les solitaires et les Spider (titres sous le h2 « Les jeux »)
+        self::assertSelectorCount(2, 'h3.games__group-title');
+        self::assertSelectorTextContains('.games__group .games__group-title', 'À plusieurs');
+        self::assertSelectorCount(\count(array_filter(Game::cases(), static fn (Game $game): bool => $game->isPatience())), '.games__group + .games__group .game');
+        self::assertSelectorExists('.games__group + .games__group a[href="/jeux/freecell"]');
+        self::assertSelectorExists('.games__group + .games__group a[href="/jeux/pyramide"]');
+        self::assertSelectorExists('.games__group + .games__group a[href="/jeux/golf-solitaire"]');
+        self::assertSelectorExists('.games__group + .games__group a[href="/jeux/solitaire-harmonie"]');
+        self::assertSelectorTextContains('.games__group + .games__group .game--pink h4.game__name', 'Solitaire');
+        self::assertSelectorExists('.games__group + .games__group a[href="/jeux/spider-pro"]');
     }
 
     public function testStepsAreOrdered(): void
@@ -94,5 +110,26 @@ final class HomeControllerTest extends WebTestCase
     public function testDescriptionIsFilled(): void
     {
         self::assertNotEmpty($this->crawler->filter('meta[name="description"]')->attr('content'));
+    }
+
+    public function testGamesPageListsTheGames(): void
+    {
+        $crawler = $this->client->request('GET', '/jeux');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(1, 'h1');
+        self::assertSelectorTextContains('h1', 'Les jeux');
+        self::assertSelectorExists('main#jeux');
+        self::assertSelectorCount(\count(Game::cases()), 'main .game');
+        // h1 « Les jeux », h2 pour chaque groupe, h3 pour chaque jeu
+        self::assertSelectorCount(2, 'main h2.games__group-title');
+        self::assertSelectorCount(\count(Game::cases()), 'main h3.game__name');
+        self::assertSame('page', $crawler->filter('.site-nav__link[href="/jeux"]')->attr('aria-current'));
+        self::assertSame('/jeux/belote', $crawler->filter('main .game a')->first()->attr('href'));
+    }
+
+    public function testMenuLeadsToTheGames(): void
+    {
+        self::assertCount(1, $this->crawler->filter('.site-nav__link[href="/jeux"]'));
     }
 }

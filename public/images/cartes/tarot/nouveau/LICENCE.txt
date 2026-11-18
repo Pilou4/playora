@@ -1,0 +1,13 @@
+Cartes Playora « Tarot classique »
+
+Images du « Tarot nouveau » de Grimaud (1898), numérisées par la Bibliothèque nationale de France (Gallica),
+dans le domaine public.
+Source : Wikimedia Commons, catégorie « Tarot nouveau - Grimaud - 1898 »
+  https://commons.wikimedia.org/wiki/Category:Tarot_nouveau_-_Grimaud_-_1898
+récupérées via https://github.com/mixvlad/TarotCards (dossier tarot/tarot-nouveau).
+
+Modifications apportées par Playora : marge grise du scan retirée (recadrage au bord de la carte),
+images ramenées à 320 × 583 pixels, au format WebP, renommées selon les codes du jeu
+(coeur-roi.webp, atout-21.webp, excuse.webp…).
+Correspondance : Hearts = cœur, Diamonds = carreau, Clubs = trèfle, Spades = pique ;
+11 = valet, 12 = cavalier, 13 = dame, 14 = roi.

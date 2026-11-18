@@ -1,0 +1,47 @@
+{# Règles du Golf : page des salons et fenêtre des règles d'une table #}
+{% if in_dialog|default(false) %}
+<section class="rules rules--dialog">
+{% else %}
+<section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
+{% endif %}
+    <h2 id="regles-titre" class="visually-hidden">Règles du Golf</h2>
+    <div class="rules__content">
+
+    <div class="rules__intro">
+        <article class="rules__summary">
+            <h3 class="rules__heading rules__heading--large">Le Golf en 30 secondes</h3>
+            <p class="rules__summary-text">De 2 à 6 joueurs (deux jeux de 52 cartes à partir de 5 joueurs). Chacun a <strong>6 cartes cachées</strong>, en 2 lignes de 3, et en retourne 2 au début. À votre tour, remplacez une de vos cartes par une meilleure. Dès qu’un joueur a retourné ses 6 cartes, les autres jouent une dernière fois, puis on compte. Après 9 ou 18 trous, <strong>le moins de points gagne.</strong></p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading">Votre tour</h3>
+            <ol class="rules__steps">
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">1</span>
+                    <div><p class="rules__step-title">La défausse</p><p class="rules__text">Prenez la carte de la défausse et échangez-la contre une de vos cartes, cachée ou visible : celle que vous remplacez va sur la défausse.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">2</span>
+                    <div><p class="rules__step-title">Ou la pioche</p><p class="rules__text">Piochez une carte : échangez-la de la même façon, ou jetez-la et retournez une de vos cartes cachées.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">3</span>
+                    <div><p class="rules__step-title">La fin du trou</p><p class="rules__text">Quand un joueur a retourné ses 6 cartes, chacun des autres joue encore une fois ; puis toutes les cartes sont retournées et comptées.</p></div>
+                </li>
+            </ol>
+        </article>
+    </div>
+
+    <article class="rules__box">
+        <h3 class="rules__heading rules__heading--medium">Les points</h3>
+        <dl class="rules__announces">
+            <div class="rules__announce"><dt class="rules__announce-name">Paire</dt><dd class="rules__announce-detail">deux cartes de même hauteur l’une au-dessus de l’autre (même colonne)</dd><dd class="rules__announce-points">0</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">2</dt><dd class="rules__announce-detail">la meilleure carte</dd><dd class="rules__announce-points">−2</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Roi</dt><dd class="rules__announce-detail">ne compte rien</dd><dd class="rules__announce-points">0</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">As</dt><dd class="rules__announce-detail">un point</dd><dd class="rules__announce-points">1</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">3 à 10</dt><dd class="rules__announce-detail">leur valeur</dd><dd class="rules__announce-points">3 à 10</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Valet, Dame</dt><dd class="rules__announce-detail">les plus lourdes</dd><dd class="rules__announce-points">10</dd></div>
+        </dl>
+    </article>
+
+    </div>
+</section>

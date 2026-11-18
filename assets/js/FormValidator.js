@@ -42,11 +42,16 @@ export default class FormValidator {
         }
     }
 
-    // Une fois en erreur, le message disparaît dès que la saisie devient correcte
+    // Une fois en erreur, le message disparaît dès que la saisie devient correcte. Le mot de passe change :
+    // sa confirmation (déjà saisie) est revérifiée aussitôt
     onInput(event) {
         if (event.target.closest('.field').classList.contains('field--error')) {
             this.check(event.target);
         }
+
+        this.inputs
+            .filter((input) => input.dataset.match === event.target.id && input.value !== '')
+            .forEach((input) => this.check(input));
     }
 
     check(input) {

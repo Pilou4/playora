@@ -2,21 +2,35 @@
 // telle carte », puis rejoue un par un les événements reçus (robots compris) avec des animations,
 // et termine sur la vue renvoyée par le serveur, qui fait foi.
 import Animator, { wait } from './Animator.js';
+import { LeaveDialog, Toast, toggleFullscreen } from '../TableControls.js';
 
 // Sens des aiguilles d'une montre : après moi, le joueur à ma gauche
 const SIDES = ['bottom', 'left', 'top', 'right'];
 const SUITS = ['pique', 'coeur', 'trefle', 'carreau'];
 const SUIT_LABELS = { pique: 'pique', coeur: 'cœur', carreau: 'carreau', trefle: 'trèfle' };
+const SUIT_SIGNS = { pique: '♠', coeur: '♥', carreau: '♦', trefle: '♣' };
+// Coinche : contrat en tout atout ou en sans atout (pas de couleur d'atout)
+const MODES = { 'tout-atout': { short: 'TA', label: 'tout atout' }, 'sans-atout': { short: 'SA', label: 'sans atout' } };
+const BIDDING_PHASES = ['encheres-1', 'encheres-2', 'annonces'];
+// Coinche et contrée : capot annoncé
+const NAMED_CONTRACTS = { 250: 'Capot', 500: 'Générale' };
+const contractName = (contract) => NAMED_CONTRACTS[contract] ?? String(contract);
+// Contrée : on « contre » ; coinche : on « coinche »
+const WORDS = {
+    coinche: { 2: 'coinché', 4: 'surcoinché', coinche: 'Coincher', surcoinche: 'Surcoincher', saidCoinche: 'Coinche !', saidSurcoinche: 'Surcoinche !' },
+    contree: { 2: 'contré', 4: 'surcontré', coinche: 'Contrer', surcoinche: 'Surcontrer', saidCoinche: 'Contre !', saidSurcoinche: 'Surcontre !' },
+};
 const TRUMP_ORDER = ['7', '8', 'dame', 'roi', '10', 'as', '9', 'valet'];
 const PLAIN_ORDER = ['7', '8', '9', 'valet', 'dame', 'roi', '10', 'as'];
 const DEAL_STAGGER = 40;
 const PACKET_PAUSE = 120;
+// Rythme de la partie, le même sur tous les écrans de la table : une annonce, une carte jouée
+export const BID_PAUSE = 650;
+const PLAY_DURATION = 420;
 // Orientation des cartes devant chaque joueur
 const ANGLES = { bottom: 0, right: -90, top: 180, left: 90 };
 // Inclinaison des cartes posées dans le pli (comme dans le CSS)
 const TRICK_TILTS = { bottom: -3, right: 10, top: 4, left: -11 };
-const STORAGE_KEY = 'playora-tapis';
-const CARPETS = ['lagon', 'vert', 'nuit'];
 // Titre de fin de donne, vu de mon équipe : [nous avons pris, ils ont pris]
 const OUTCOMES = {
     reussi: ['Contrat rempli !', 'Ils ont fait leur contrat'],
@@ -37,12 +51,16 @@ export default class Table {
         this.hubUrl = dataset.hubUrl;
         this.csrf = dataset.csrf;
         this.cardsUrl = dataset.cardsUrl;
+        this.backUrl = dataset.backUrl;
         this.suitsUrl = dataset.suitsUrl;
+        this.leaveUrl = dataset.leaveUrl;
+        this.lobbyUrl = dataset.lobbyUrl;
         this.view = JSON.parse(dataset.view);
         this.live = structuredClone(this.view);
 
         this.players = element.querySelector('.belote__players');
         this.trick = element.querySelector('.belote__trick');
+        this.mat = element.querySelector('.belote__mat');
         this.bidding = element.querySelector('.bidding');
         this.biddingCard = element.querySelector('.bidding__card');
         this.biddingTitle = element.querySelector('.bidding__title');
@@ -50,7 +68,9 @@ export default class Table {
         this.biddingActions = element.querySelector('.bidding__actions');
         this.result = element.querySelector('.result');
         this.hand = element.querySelector('.hand');
-        this.toast = element.querySelector('.belote__toast');
+        this.toast = new Toast(element.querySelector('.belote__toast'));
+        this.leaveDialog = new LeaveDialog({ dialog: element.querySelector('.belote__leave'), leaveUrl: this.leaveUrl, lobbyUrl: this.lobbyUrl, csrf: this.csrf });
+        this.declareButton = element.querySelector('.belote__declare');
         this.lastTrick = element.querySelector('.last-trick');
         this.lastTrickToggle = element.querySelector('.last-trick__toggle');
         this.score = element.querySelector('.score');
@@ -61,10 +81,12 @@ export default class Table {
         this.queue = Promise.resolve();
         this.busy = false;
         this.pendingCard = null;
+        // Dernière version annoncée par Mercure, et une récupération en cours (aucune annonce n'est perdue)
+        this.latestVersion = 0;
+        this.fetching = false;
         this.timerKey = null;
         this.timerAnimation = null;
         this.timeoutTimer = null;
-        this.toastTimer = null;
         this.dealing = false;
 
         this.onClick = this.onClick.bind(this);
@@ -77,7 +99,6 @@ export default class Table {
         window.addEventListener('resize', this.fitToScreen);
         this.fitToScreen();
         this.measureCards();
-        this.applyCarpet(this.storedCarpet());
         this.buildPlayers();
         this.render();
         this.queue = this.queue.then(() => this.introDeal());
@@ -110,8 +131,23 @@ export default class Table {
             : this.animator.box(this.seat(position).querySelector('.player__fan'), this.widths.back);
     }
 
+    // Le centre du tapis : la distribution et la carte retournée partent d'ici, comme d'un paquet posé sur la table
+    centerBox() {
+        return this.animator.box(this.mat, this.widths.back);
+    }
+
     angle(position) {
-        return ANGLES[this.side(position)];
+        return ANGLES[this.side(position)] ?? 180;
+    }
+
+    // Inclinaison d'une carte posée dans le pli, selon la place du joueur
+    trickTilt(position) {
+        return TRICK_TILTS[this.side(position)] ?? 0;
+    }
+
+    // Le joueur suivant (4 à la belote ; le tarot se joue aussi à 3 ou 5)
+    nextPosition(position) {
+        return (position + 1) % this.view.players.length;
     }
 
     // ---------- Places ----------
@@ -180,7 +216,7 @@ export default class Table {
 
         card.className = code ? 'card' : 'card card--back';
         face.className = 'card__face';
-        face.src = code ? `${this.cardsUrl}${suit}/${rank}.svg` : `${this.cardsUrl}dos.svg`;
+        face.src = code ? `${this.cardsUrl}${suit}/${rank}.svg` : this.backUrl;
         face.alt = code ? `${rank} de ${SUIT_LABELS[suit]}` : '';
         face.draggable = false;
         card.append(face);
@@ -188,8 +224,10 @@ export default class Table {
         return card;
     }
 
+    // Atout à gauche ; au premier tour d'enchères, la couleur proposée (carte retournée) à gauche pour mieux décider
     sortHand(codes) {
-        const trump = this.live.trump;
+        const { phase, turned } = this.live;
+        const trump = this.live.trump ?? (phase === 'encheres-1' && turned ? turned.split('-')[0] : null);
         const suits = trump ? [trump, ...SUITS.filter((suit) => suit !== trump)] : SUITS;
 
         return [...codes].sort((a, b) => {
@@ -210,6 +248,43 @@ export default class Table {
         this.renderBidding();
         this.renderScore();
         this.renderTimer();
+        this.renderDeclare();
+    }
+
+    // ---------- Annonces ----------
+
+    // Le bouton n'apparaît qu'à mon tour, avant ma première carte, si j'ai une annonce
+    renderDeclare() {
+        const names = this.live.declarable ?? [];
+        const visible = !this.busy && names.length > 0 && this.live.phase === 'jeu' && this.live.turn === this.me;
+
+        if (visible) {
+            this.declareButton.textContent = `Annoncer : ${names.join(' + ')}`;
+        }
+
+        this.declareButton.classList.toggle('belote__declare--visible', visible);
+        this.declareButton.tabIndex = visible ? 0 : -1;
+        this.declareButton.setAttribute('aria-hidden', String(!visible));
+    }
+
+    async onDeclared(event) {
+        this.say(event.position, event.names.join(' + '));
+        await wait(700);
+    }
+
+    // Fin du premier pli : les annonces sont montrées, une seule équipe les marque
+    async onAnnouncements(event) {
+        if (event.team === null) {
+            this.showToast('Annonces de même valeur : elles s’annulent', 2400);
+        } else {
+            const ours = event.team === this.player(this.me).team;
+            this.showToast(`${ours ? 'Votre équipe marque' : 'Vos adversaires marquent'} ${event.points} pts d’annonces`, 2400);
+        }
+
+        Object.entries(event.declarations).forEach(([position, list]) => {
+            this.say(Number(position), list.map((announcement) => announcement.name).join(' + '));
+        });
+        await wait(1300);
     }
 
     renderPlayers() {
@@ -233,9 +308,26 @@ export default class Table {
             seat.classList.toggle('player--turn', phase !== 'terminee' && turn === player.position);
 
             // Pastille d'atout sur le preneur
-            const taking = taker === player.position && Boolean(trump);
+            const mode = MODES[this.live.mode];
+            const taking = taker === player.position && (Boolean(trump) || Boolean(mode));
             contract.classList.toggle('player__contract--visible', taking);
-            contract.replaceChildren(...(taking ? [this.suitIcon(trump, 20)] : []));
+            contract.classList.toggle('player__contract--value', taking && Boolean(this.live.contract));
+            contract.replaceChildren(...(taking && trump ? [this.suitIcon(trump, 20)] : []));
+
+            if (taking && mode) {
+                const short = document.createElement('span');
+                short.className = 'player__contract-mode';
+                short.textContent = mode.short;
+                contract.append(short);
+            }
+
+            // Coinche et contrée : la valeur du contrat à côté de la couleur (×2, ×4 si coinché)
+            if (taking && this.live.contract) {
+                const value = document.createElement('span');
+                value.className = 'player__contract-value';
+                value.textContent = `${contractName(this.live.contract)}${this.live.multiplier > 1 ? ` ×${this.live.multiplier}` : ''}`;
+                contract.prepend(value);
+            }
 
             // Score provisoire de la donne (points des plis remportés) et pastille « 1er » de celui qui entame
             pile.classList.toggle('player__pile--empty', points[player.position] === 0);
@@ -293,12 +385,22 @@ export default class Table {
 
     renderBidding() {
         const { phase, turned, turn } = this.live;
+
+        this.bidding.classList.toggle('bidding--auction', phase === 'annonces');
+
+        if (phase === 'annonces') {
+            this.renderAuction();
+
+            return;
+        }
+
         const bidding = phase === 'encheres-1' || phase === 'encheres-2';
         const visible = bidding && Boolean(turned) && !this.dealing;
         const second = phase === 'encheres-2';
 
         this.bidding.classList.toggle('bidding--visible', visible);
         this.bidding.classList.toggle('bidding--second', second && visible && turn === this.me && !this.busy);
+        this.bidding.classList.toggle('bidding--mine', visible && turn === this.me && !this.busy);
         this.biddingCard.replaceChildren(...(bidding && turned ? [this.cardElement(turned)] : []));
         this.biddingActions.replaceChildren();
         this.biddingTitle.textContent = '';
@@ -329,6 +431,176 @@ export default class Table {
         }
 
         this.biddingActions.append(this.bidButton('Passer', null, 'bidding__button--pass'));
+    }
+
+    // ---------- Coinche et contrée : enchères ----------
+
+    contractLabel(contract, trump, mode) {
+        return `${contractName(contract)} ${SUIT_SIGNS[trump] ?? MODES[mode]?.short ?? ''}`.trim();
+    }
+
+    words() {
+        return WORDS[this.view.variant] ?? WORDS.coinche;
+    }
+
+    // Contrat en cours, vu de tous : « 110 ♥ · Robot Bip · coinché »
+    auctionSummary() {
+        const { contract, trump, taker, multiplier, mode } = this.live;
+
+        if (!contract) {
+            return 'Aucune annonce pour l’instant';
+        }
+
+        return [`Contrat ${this.contractLabel(contract, trump, mode)}`, this.player(taker).pseudo, multiplier > 1 ? this.words()[multiplier] : null].filter(Boolean).join(' · ');
+    }
+
+    renderAuction() {
+        const { turn } = this.live;
+        const options = this.view.auction;
+        const mine = turn === this.me && !this.busy && Boolean(options);
+        const visible = !this.dealing;
+
+        this.bidding.classList.toggle('bidding--visible', visible);
+        this.bidding.classList.toggle('bidding--second', false);
+        this.bidding.classList.toggle('bidding--mine', visible && mine);
+        this.biddingCard.replaceChildren();
+        this.biddingActions.replaceChildren();
+
+        if (!visible) {
+            return;
+        }
+
+        if (!mine) {
+            this.biddingTitle.textContent = this.auctionSummary();
+            this.biddingText.textContent = turn === this.me ? '' : `${this.player(turn).pseudo} réfléchit…`;
+
+            return;
+        }
+
+        this.biddingTitle.textContent = 'À vous d’annoncer';
+        this.biddingText.textContent = this.auctionSummary();
+
+        // 1re ligne : le contrat (± par dizaines, jusqu'au capot), passer, coincher ; 2e ligne : une couleur pour annoncer
+        const { contracts } = options;
+        const top = document.createElement('div');
+        top.className = 'bidding__row';
+        let value = null;
+
+        if (contracts.length > 0) {
+            if (!contracts.includes(this.auctionValue)) {
+                [this.auctionValue] = contracts;
+            }
+
+            const index = contracts.indexOf(this.auctionValue);
+            value = document.createElement('span');
+            value.className = 'bidding__value';
+            value.textContent = contractName(this.auctionValue);
+            value.setAttribute('aria-live', 'polite');
+            top.append(
+                this.stepButton('−', 'Annonce plus basse', -1, index === 0),
+                value,
+                this.stepButton('+', 'Annonce plus haute', 1, index === contracts.length - 1),
+            );
+        }
+
+        top.append(this.bidButton('Passer', null, 'bidding__button--pass'));
+
+        if (options.coinche) {
+            top.append(this.actionButton(this.words().coinche, 'coinche'));
+        }
+
+        if (options.surcoinche) {
+            top.append(this.actionButton(this.words().surcoinche, 'surcoinche'));
+        }
+
+        this.biddingActions.append(top);
+
+        if (value) {
+            const suits = document.createElement('div');
+            suits.className = 'bidding__row';
+            SUITS.forEach((suit) => {
+                const button = this.bidButton(null, suit, 'bidding__button--suit bidding__button--announce');
+                button.setAttribute('aria-label', `Annoncer ${value.textContent} à ${SUIT_LABELS[suit]}`);
+                suits.append(button);
+            });
+
+            // Coinche : tout atout et sans atout
+            if (options.modes) {
+                Object.entries(MODES).forEach(([mode, { short, label }]) => {
+                    const button = this.bidButton(short, null, 'bidding__button--suit bidding__button--mode bidding__button--announce');
+                    button.dataset.suit = mode;
+                    button.setAttribute('aria-label', `Annoncer ${value.textContent} en ${label}`);
+                    suits.append(button);
+                });
+            }
+
+            this.biddingActions.append(suits);
+        }
+    }
+
+    stepButton(text, label, step, disabled) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'bidding__step';
+        button.textContent = text;
+        button.dataset.step = String(step);
+        button.disabled = disabled;
+        button.setAttribute('aria-label', label);
+
+        return button;
+    }
+
+    actionButton(text, action) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'bidding__button bidding__button--take bidding__button--action';
+        button.dataset.action = action;
+        button.textContent = text;
+
+        return button;
+    }
+
+    changeAuctionValue(step) {
+        const contracts = this.view.auction?.contracts ?? [];
+        const index = Math.min(contracts.length - 1, Math.max(0, contracts.indexOf(this.auctionValue) + step));
+        this.auctionValue = contracts[index];
+        this.renderBidding();
+    }
+
+    async onAuction(event) {
+        const words = {
+            bid: this.contractLabel(event.contract, event.suit, event.mode),
+            pass: 'Passe',
+            coinche: this.words().saidCoinche,
+            surcoinche: this.words().saidSurcoinche,
+        };
+        this.say(event.position, words[event.action]);
+
+        if (event.action === 'bid') {
+            Object.assign(this.live, { contract: event.contract, trump: event.suit, mode: event.mode, taker: event.position });
+        } else if (event.action === 'coinche') {
+            Object.assign(this.live, { multiplier: 2, coincher: event.position });
+        } else if (event.action === 'surcoinche') {
+            this.live.multiplier = 4;
+        }
+
+        this.live.turn = (event.position + 1) % 4;
+        this.renderPlayers();
+        this.renderBidding();
+        // Même rythme sur tous les écrans de la table (le sien compris) : tout le monde voit la même chose en même temps
+        await wait(BID_PAUSE);
+    }
+
+    // Fin des enchères : le contrat est connu, le jeu commence à gauche du donneur
+    async onContract(event) {
+        Object.assign(this.live, {
+            phase: 'jeu', taker: event.taker, trump: event.trump, mode: event.mode, contract: event.contract, multiplier: event.multiplier,
+            turn: (this.live.dealer + 1) % 4,
+        });
+        this.view.auction = null;
+        this.render();
+        this.showToast(`${this.player(event.taker).pseudo} joue ${this.contractLabel(event.contract, event.trump, event.mode)}${event.multiplier > 1 ? ` ${this.words()[event.multiplier]}` : ''}`, 2200);
+        await wait(700);
     }
 
     // label null : tuile avec la seule couleur (second tour)
@@ -371,6 +643,9 @@ export default class Table {
         });
 
         this.score.querySelector('.score__rows').replaceChildren(...rows);
+        // La dernière donne reste en vue : les précédentes se lisent en remontant
+        const list = this.score.querySelector('.score__list');
+        list.scrollTop = list.scrollHeight;
         this.score.querySelector('.score__us').textContent = String(scores[us]);
         this.score.querySelector('.score__them').textContent = String(scores[1 - us]);
         this.lastTrickToggle.disabled = lastTrick.length === 0;
@@ -394,18 +669,54 @@ export default class Table {
             return;
         }
 
-        const total = this.view.turnSeconds * 1000;
-        const left = Math.min(total, (this.view.secondsLeft ?? this.view.turnSeconds) * 1000);
+        const seconds = this.timerSeconds(phase);
+        const total = seconds * 1000;
+        const left = Math.min(total, (this.view.secondsLeft ?? seconds) * 1000);
+
+        // Un seul minuteur visible : la jauge du centre quand je dois prendre ou passer, l'anneau de l'avatar sinon
+        const gauge = this.usesGauge(phase) && turn === this.me;
 
         this.timerKey = key;
         this.timerAnimation?.cancel();
         window.clearTimeout(this.timeoutTimer);
-        this.timerAnimation = this.seat(turn).querySelector('.player__ring').animate([{ '--ring': '100%' }, { '--ring': '0%' }], {
-            duration: total,
-            fill: 'forwards',
-        });
-        this.timerAnimation.currentTime = total - left;
-        this.timeoutTimer = window.setTimeout(() => this.onTimeout(key), left + (turn === this.me ? 300 : 1500));
+        this.seat(this.me).classList.toggle('player--bidding', gauge);
+
+        if (!gauge) {
+            this.timerAnimation = this.seat(turn).querySelector('.player__ring').animate([{ '--ring': '100%' }, { '--ring': '0%' }], {
+                duration: total,
+                fill: 'forwards',
+            });
+            this.timerAnimation.currentTime = total - left;
+        }
+
+        this.renderGauge(gauge, total, left);
+        // Le serveur accorde une seconde de marge : on attend un peu plus avant de lui signaler le temps écoulé
+        this.timeoutTimer = window.setTimeout(() => this.onTimeout(key), left + 1500);
+    }
+
+    // Aux enchères, le temps pour prendre ou passer ; ensuite, le temps pour jouer une carte (le tarot a les siens)
+    timerSeconds(phase) {
+        return BIDDING_PHASES.includes(phase) ? (this.view.bidSeconds ?? this.view.turnSeconds) : this.view.turnSeconds;
+    }
+
+    usesGauge(phase) {
+        return BIDDING_PHASES.includes(phase);
+    }
+
+    // Jauge des enchères : elle se vide (vert, puis jaune, puis rouge) pendant le temps pour prendre ou passer
+    renderGauge(mine, total, left) {
+        this.gaugeAnimation?.cancel();
+
+        if (!mine) {
+            return;
+        }
+
+        this.gaugeAnimation = this.element.querySelector('.bidding__gauge-fill').animate([
+            { transform: 'scaleX(1)', backgroundColor: '#3fbf7f' },
+            { transform: 'scaleX(0.4)', backgroundColor: '#ffd23f', offset: 0.6 },
+            { transform: 'scaleX(0)', backgroundColor: '#ff5a3d' },
+        ], { duration: total, fill: 'forwards' });
+        this.gaugeAnimation.currentTime = total - left;
     }
 
     async onTimeout(key) {
@@ -428,10 +739,14 @@ export default class Table {
                 return;
             }
 
-            // Déjà joué par quelqu'un d'autre, ou pas encore l'heure : on se remet à jour sans rien afficher
+            // Déjà joué par quelqu'un d'autre, ou pas encore l'heure : on se remet à jour sans rien afficher,
+            // et le minuteur repart sur le temps restant donné par le serveur (sinon plus rien ne se passerait)
+            this.timerKey = null;
             this.queue = this.queue.then(async () => this.finish(payload.view ?? await this.fetchView() ?? this.view));
         } catch {
             this.busy = false;
+            this.timerKey = null;
+            this.renderTimer();
         }
     }
 
@@ -443,10 +758,7 @@ export default class Table {
     }
 
     showToast(text, duration = 1800) {
-        this.toast.textContent = text;
-        this.toast.classList.add('belote__toast--visible');
-        window.clearTimeout(this.toastTimer);
-        this.toastTimer = window.setTimeout(() => this.toast.classList.remove('belote__toast--visible'), duration);
+        this.toast.show(text, duration);
     }
 
     // ---------- Actions du joueur ----------
@@ -454,20 +766,32 @@ export default class Table {
     onClick(event) {
         const card = event.target.closest('.hand__card--playable');
         const bid = event.target.closest('.bidding__button');
-        const carpet = event.target.closest('.carpets__choice');
 
         if (card && this.hand.classList.contains('hand--active')) {
             this.playCard(card);
+        } else if (event.target.closest('.belote__declare--visible') && !this.busy) {
+            this.live.declarable = [];
+            this.send('declaration', {});
+        } else if (event.target.closest('.bidding__step') && !this.busy) {
+            this.changeAuctionValue(Number(event.target.closest('.bidding__step').dataset.step));
+        } else if (bid?.classList.contains('bidding__button--announce') && !this.busy) {
+            this.send('annonce', { contract: this.auctionValue, suit: bid.dataset.suit });
+        } else if (bid?.classList.contains('bidding__button--action') && !this.busy) {
+            this.send(bid.dataset.action, {});
         } else if (bid && !this.busy) {
             this.send('encheres', { take: bid.dataset.take === '1', suit: bid.dataset.suit ?? null });
-        } else if (carpet) {
-            this.applyCarpet(carpet.dataset.carpet);
         } else if (event.target.closest('.belote__tool--rules')) {
             this.element.querySelector('.belote__rules').showModal();
         } else if (event.target.closest('.belote__rules-close')) {
             this.element.querySelector('.belote__rules').close();
+        } else if (event.target.closest('.belote__quit')) {
+            this.leaveDialog.open(this.live.phase === 'terminee');
+        } else if (event.target.closest('.belote__leave-stay')) {
+            this.leaveDialog.close();
+        } else if (event.target.closest('.belote__leave-confirm')) {
+            this.leaveDialog.confirm(event.target.closest('.belote__leave-confirm'));
         } else if (event.target.closest('.belote__tool--fullscreen')) {
-            this.toggleFullscreen();
+            toggleFullscreen(this.element.querySelector('.belote__frame'));
         } else if (event.target.closest('.last-trick__toggle')) {
             this.toggleLastTrick(!this.lastTrick.classList.contains('last-trick--open'));
         } else if (event.target.closest('.score__head')) {
@@ -491,6 +815,7 @@ export default class Table {
         this.busy = true;
         this.renderHand();
         this.renderTimer();
+        this.renderDeclare();
 
         const slot = this.trickCard(this.me, code);
         this.trick.append(slot);
@@ -506,6 +831,7 @@ export default class Table {
     async send(action, body) {
         this.busy = true;
         this.renderBidding();
+        this.renderDeclare();
 
         try {
             const response = await fetch(`${this.apiUrl}/${action}`, {
@@ -547,23 +873,37 @@ export default class Table {
         }
     }
 
-    // Un autre joueur a joué (Mercure) : on récupère sa vue et ce qui s'est passé
-    async onUpdate(message) {
+    // Un autre joueur a joué (Mercure) : on récupère sa vue et ce qui s'est passé.
+    // Pendant une animation, l'annonce n'est plus ignorée : elle est gardée et récupérée juste après (sinon cet écran
+    // prenait du retard sur les autres jusqu'au coup suivant)
+    onUpdate(message) {
         const { version } = JSON.parse(message.data);
 
-        if (this.busy || version <= this.view.version) {
+        this.latestVersion = Math.max(this.latestVersion, version);
+        this.catchUp();
+    }
+
+    async catchUp() {
+        if (this.busy || this.fetching || this.latestVersion <= this.view.version) {
             return;
         }
+
+        this.fetching = true;
 
         try {
             const response = await fetch(`${this.apiUrl}?depuis=${this.view.version}`, { headers: { Accept: 'application/json' } });
 
             if (response.ok) {
                 const payload = await response.json();
-                this.enqueue(payload.events, payload.view);
+
+                if (payload.view.version > this.view.version) {
+                    this.enqueue(payload.events, payload.view);
+                }
             }
         } catch {
             // Réseau coupé : le prochain message relancera la mise à jour
+        } finally {
+            this.fetching = false;
         }
     }
 
@@ -579,7 +919,15 @@ export default class Table {
     }
 
     finish(view) {
+        // Un joueur a quitté la partie : sa place passe à un robot (nom et avatar changent)
+        const players = JSON.stringify(view.players);
+        const changed = players !== JSON.stringify(this.view.players);
         this.view = view;
+
+        if (changed) {
+            this.buildPlayers();
+        }
+
         this.live = structuredClone(view);
         this.busy = false;
         this.pendingCard = null;
@@ -588,6 +936,9 @@ export default class Table {
         if (view.phase === 'terminee') {
             this.showEnd(view);
         }
+
+        // Une annonce arrivée pendant l'animation : on rattrape tout de suite
+        this.catchUp();
     }
 
     // ---------- Événements (animations) ----------
@@ -596,41 +947,53 @@ export default class Table {
         const handlers = {
             dealt: () => this.onDealt(event),
             bid: () => this.onBid(event),
+            auction: () => this.onAuction(event),
+            contract: () => this.onContract(event),
             secondRound: () => this.showToast('Second tour : on peut choisir une autre couleur'),
             redeal: async () => { this.showToast('Personne ne prend : on redistribue'); await wait(900); },
             completed: () => this.onCompleted(event),
             played: () => this.onPlayed(event),
             belote: async () => { this.say(event.position, `${event.word} !`); await wait(500); },
+            declared: () => this.onDeclared(event),
+            announcements: () => this.onAnnouncements(event),
             trick: () => this.onTrick(event),
             dealEnd: () => this.onDealEnd(event),
             gameEnd: async () => {},
+            left: async () => { this.showToast(`${event.pseudo} a quitté la partie : un robot prend sa place`, 2600); await wait(600); },
         };
 
         await handlers[event.type]?.();
     }
 
     async onDealt(event) {
+        // Coinche et contrée : 8 cartes (3, 3 puis 2) et pas de carte retournée
+        const auction = !event.turned;
         Object.assign(this.live, {
-            deal: event.deal, dealer: event.dealer, phase: 'encheres-1', turned: null, trump: null, taker: null,
+            deal: event.deal, dealer: event.dealer, phase: auction ? 'annonces' : 'encheres-1', turned: null, trump: null, taker: null,
+            contract: null, multiplier: 1, coincher: null, mode: 'couleur',
             trick: [], hand: [], counts: [0, 0, 0, 0], points: [0, 0, 0, 0], turn: (event.dealer + 1) % 4,
         });
         this.dealing = true;
         this.render();
-        await this.dealFlights(event.dealer, [3, 2], event.counts, event.cards);
-        await this.turnUp(event.dealer, event.turned);
+        await this.dealFlights(event.dealer, auction ? [3, 3, 2] : [3, 2], event.counts, event.cards);
+
+        if (!auction) {
+            await this.turnUp(event.turned);
+        }
+
         this.dealing = false;
         this.renderBidding();
         await wait(250);
     }
 
     // La carte du dessus du paquet est retournée au milieu de la table
-    async turnUp(dealer, code) {
+    async turnUp(code) {
         this.live.turned = code;
         this.renderBidding();
         const card = this.biddingCard.firstElementChild;
         card.style.visibility = 'hidden';
-        await this.animator.fly(this.cardElement(null), this.seatBox(dealer), this.animator.box(card), {
-            duration: 460, rotate: [this.angle(dealer), 0], reveal: this.cardElement(code),
+        await this.animator.fly(this.cardElement(null), this.centerBox(), this.animator.box(card), {
+            duration: 460, rotate: [0, 0], reveal: this.cardElement(code),
         });
         card.style.visibility = '';
     }
@@ -645,7 +1008,8 @@ export default class Table {
             this.renderBidding();
         }
 
-        await wait(event.position === this.me ? 250 : 650);
+        // Même rythme sur tous les écrans de la table (le sien compris) : tout le monde voit la même chose en même temps
+        await wait(BID_PAUSE);
     }
 
     async onCompleted(event) {
@@ -675,7 +1039,9 @@ export default class Table {
         const mine = event.position === this.me;
 
         if (mine && this.pendingCard === event.card) {
+            // Sa carte est déjà posée ; les autres écrans la voient arriver pendant ce temps : on attend autant qu'eux
             this.pendingCard = null;
+            await wait(PLAY_DURATION);
         } else {
             const slot = this.trickCard(event.position, event.card);
             this.trick.append(slot);
@@ -692,13 +1058,13 @@ export default class Table {
 
             // Un adversaire sort la carte de son jeu face cachée et la retourne en la posant
             await this.animator.fly(mine ? this.cardElement(event.card) : this.cardElement(null), from, this.animator.box(slot, this.widths.trick), {
-                duration: 420, rotate: [this.angle(event.position), TRICK_TILTS[this.side(event.position)]], reveal: mine ? null : this.cardElement(event.card),
+                duration: PLAY_DURATION, rotate: [this.angle(event.position), this.trickTilt(event.position)], reveal: mine ? null : this.cardElement(event.card),
             });
             slot.style.visibility = '';
             this.live.trick = [...this.live.trick, [event.position, event.card]];
         }
 
-        this.live.turn = (event.position + 1) % 4;
+        this.live.turn = this.nextPosition(event.position);
         this.renderPlayers();
     }
 
@@ -749,13 +1115,19 @@ export default class Table {
             bonus.push('dont +20 Belote');
         }
 
+        if ((result.announces?.[us] ?? 0) > 0) {
+            bonus.push(`dont +${result.announces[us]} d’annonces`);
+        }
+
         this.live.scores = scores;
         this.live.dealScores = [...(this.live.dealScores ?? []), result.scored];
         this.renderScore();
 
         const ourContract = this.player(result.taker).team === us;
         this.result.querySelector('.result__title').textContent = OUTCOMES[result.outcome][ourContract ? 0 : 1];
-        this.result.querySelector('.result__taker').textContent = `Pris par ${this.player(result.taker).pseudo} à ${SUIT_LABELS[result.trump]}`;
+        this.result.querySelector('.result__taker').textContent = result.contract
+            ? `Contrat ${this.contractLabel(result.contract, result.trump, result.mode)} de ${this.player(result.taker).pseudo}${result.multiplier > 1 ? ` (${this.words()[result.multiplier]})` : ''}`
+            : `Pris par ${this.player(result.taker).pseudo} à ${SUIT_LABELS[result.trump]}`;
         this.result.querySelector('.result__value').textContent = String(result.scored[us]);
         this.result.querySelector('.result__bonus').textContent = bonus.join(' · ');
         this.result.querySelector('.result__them').textContent = `Vos adversaires marquent ${result.scored[1 - us]} pts`;
@@ -789,14 +1161,14 @@ export default class Table {
     // (packets : [3, 2] pour la donne ; sinon le nombre de cartes de chacun en un seul paquet).
     // Mes cartes se retournent en arrivant dans ma main ; chaque carte posée met la table à jour.
     async dealFlights(dealer, packets, counts, cards) {
-        const from = this.seatBox(dealer);
+        const from = this.centerBox();
         const queue = [...cards];
         const flights = [];
         let delay = 0;
 
         for (const packet of packets ?? [null]) {
-            for (let offset = 1; offset <= 4; offset += 1) {
-                const position = (dealer + offset) % 4;
+            for (let offset = 1; offset <= this.view.players.length; offset += 1) {
+                const position = (dealer + offset) % this.view.players.length;
                 const count = packet ?? counts[position];
                 const to = this.seatBox(position);
                 const mine = position === this.me;
@@ -804,7 +1176,7 @@ export default class Table {
                 for (let i = 0; i < count; i += 1) {
                     const code = mine ? queue.shift() : null;
                     const flight = this.animator.fly(this.cardElement(null), from, to, {
-                        duration: 380, delay, rotate: [this.angle(dealer), this.angle(position) + (i - 1) * 3], reveal: code ? this.cardElement(code) : null,
+                        duration: 380, delay, rotate: [0, this.angle(position) + (i - 1) * 3], reveal: code ? this.cardElement(code) : null,
                     });
                     flights.push(flight.then(() => this.land(position, code ? [code] : [])));
                     delay += DEAL_STAGGER;
@@ -853,49 +1225,11 @@ export default class Table {
         await this.dealFlights(this.view.dealer, turned ? [3, 2] : null, counts, hand);
 
         if (turned) {
-            await this.turnUp(this.view.dealer, turned);
+            await this.turnUp(turned);
         }
 
         this.dealing = false;
         this.busy = false;
         this.render();
-    }
-
-    // Plein écran sur le plateau seul (et retour)
-    toggleFullscreen() {
-        const frame = this.element.querySelector('.belote__frame');
-
-        if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
-        } else {
-            frame.requestFullscreen?.().catch(() => {});
-        }
-    }
-
-    // ---------- Tapis ----------
-
-    storedCarpet() {
-        try {
-            return window.localStorage.getItem(STORAGE_KEY) ?? 'lagon';
-        } catch {
-            return 'lagon';
-        }
-    }
-
-    applyCarpet(name) {
-        const carpet = CARPETS.includes(name) ? name : 'lagon';
-
-        CARPETS.forEach((item) => this.element.classList.toggle(`belote--${item}`, item === carpet));
-        this.element.querySelectorAll('.carpets__choice').forEach((button) => {
-            const active = button.dataset.carpet === carpet;
-            button.classList.toggle('carpets__choice--active', active);
-            button.setAttribute('aria-pressed', String(active));
-        });
-
-        try {
-            window.localStorage.setItem(STORAGE_KEY, carpet);
-        } catch {
-            // Stockage indisponible : le choix vaut pour cette page seulement
-        }
     }
 }

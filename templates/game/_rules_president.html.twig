@@ -1,0 +1,46 @@
+{# Règles du Président : page des salons et fenêtre des règles d'une table #}
+{% if in_dialog|default(false) %}
+<section class="rules rules--dialog">
+{% else %}
+<section id="regles" class="lobby__panel rules" role="tabpanel" aria-labelledby="regles-titre" hidden>
+{% endif %}
+    <h2 id="regles-titre" class="visually-hidden">Règles du Président</h2>
+    <div class="rules__content">
+
+    <div class="rules__intro">
+        <article class="rules__summary">
+            <h3 class="rules__heading rules__heading--large">Le Président en 30 secondes</h3>
+            <p class="rules__summary-text">De 3 à 7 joueurs, toutes les cartes d’un jeu de 52 sont distribuées. Débarrassez-vous de vos cartes <strong>le premier</strong> : vous devenez <strong>Président</strong>, et le dernier devient <strong>Pauvre</strong>. Le <strong>2</strong> est la carte la plus forte, le <strong>3</strong> la plus faible.</p>
+        </article>
+        <article class="rules__box">
+            <h3 class="rules__heading">Comment jouer</h3>
+            <ol class="rules__steps">
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">1</span>
+                    <div><p class="rules__step-title">Poser</p><p class="rules__text">Celui qui a la main pose 1, 2, 3 ou 4 cartes de même valeur. Choisissez vos cartes (elles se lèvent), puis « Poser ».</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">2</span>
+                    <div><p class="rules__step-title">Monter</p><p class="rules__text">Chacun à son tour pose autant de cartes, d’une valeur plus forte, ou passe. Un joueur qui a passé peut rejouer à son tour suivant.</p></div>
+                </li>
+                <li class="rules__step">
+                    <span class="rules__step-number" aria-hidden="true">3</span>
+                    <div><p class="rules__step-title">Reprendre la main</p><p class="rules__text">Quand tous les autres ont passé, le pli est écarté : le dernier à avoir posé repart avec ce qu’il veut.</p></div>
+                </li>
+            </ol>
+        </article>
+    </div>
+
+    <article class="rules__box">
+        <h3 class="rules__heading rules__heading--medium">Titres, échange et points</h3>
+        <dl class="rules__announces">
+            <div class="rules__announce"><dt class="rules__announce-name">Ordre des cartes</dt><dd class="rules__announce-detail">3, 4, 5, 6, 7, 8, 9, 10, Valet, Dame, Roi, As, 2</dd><dd class="rules__announce-points">2</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Première manche</dt><dd class="rules__announce-detail">le joueur qui a la Dame de cœur commence</dd><dd class="rules__announce-points">D♥</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Titres</dt><dd class="rules__announce-detail">Président, Vice-président (dès 4 joueurs), Neutres, Vice-pauvre (dès 4 joueurs), Pauvre</dd><dd class="rules__announce-points">1er</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Échange</dt><dd class="rules__announce-detail">le Pauvre donne ses 2 meilleures cartes au Président, qui lui en rend 2 de son choix ; le Vice-pauvre et le Vice-président échangent 1 carte ; le Pauvre commence</dd><dd class="rules__announce-points">2 ↔ 2</dd></div>
+            <div class="rules__announce"><dt class="rules__announce-name">Points</dt><dd class="rules__announce-detail">1 point par joueur battu à chaque manche ; le premier à atteindre les points prévus gagne la partie</dd><dd class="rules__announce-points">+1</dd></div>
+        </dl>
+    </article>
+
+    </div>
+</section>

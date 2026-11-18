@@ -5,7 +5,14 @@ declare(strict_types=1);
 namespace App\Game\Belote;
 
 /**
- * Compte d'une donne : 162 points (dix de der compris), belote-rebelote 20, capot 252.
+ * Compte d'une donne de belote classique (règles GameDuell) : 162 points (dix de der compris),
+ * belote-rebelote 20, capot 252 (le dernier pli vaut alors 100).
+ *
+ * Le preneur doit faire plus que la défense, belote comprise : avec une belote, 92 points sur 182.
+ * Litige (égalité) : l'équipe qui a pris perd ses points, la défense marque les siens.
+ *
+ * Annonces (belote avec annonces) : elles comptent pour savoir si le preneur a fait plus que la défense
+ * et se marquent avec les points de l'équipe ; si le preneur chute, la défense marque aussi les siennes.
  */
 final class BeloteScorer
 {
@@ -17,6 +24,7 @@ final class BeloteScorer
     /**
      * @param array{int, int} $cardPoints
      * @param array{int, int} $tricksWon
+     * @param array{int, int} $announces points d'annonces de chaque équipe (une seule en marque)
      */
     public static function score(
         int $number,
@@ -26,7 +34,7 @@ final class BeloteScorer
         array $cardPoints,
         array $tricksWon,
         ?int $beloteTeam,
-        int $pending,
+        array $announces = [0, 0],
     ): DealResult {
         $takerTeam = BeloteRules::team($taker);
         $defense = 1 - $takerTeam;
@@ -39,8 +47,8 @@ final class BeloteScorer
         $capotTeam = array_search(8, $tricksWon, true);
         $capotTeam = false === $capotTeam ? null : $capotTeam;
 
-        $takerTotal = $cardPoints[$takerTeam] + $belote[$takerTeam];
-        $defenseTotal = $cardPoints[$defense] + $belote[$defense];
+        $takerTotal = $cardPoints[$takerTeam] + $belote[$takerTeam] + $announces[$takerTeam];
+        $defenseTotal = $cardPoints[$defense] + $belote[$defense] + $announces[$defense];
 
         $outcome = match (true) {
             null !== $capotTeam => $capotTeam === $takerTeam ? Outcome::Made : Outcome::Failed,
@@ -50,6 +58,15 @@ final class BeloteScorer
         };
 
         $scored = $belote;
+
+        if (Outcome::Made === $outcome) {
+            $scored[0] += $announces[0];
+            $scored[1] += $announces[1];
+        } elseif (Outcome::Failed === $outcome) {
+            $scored[$defense] += $announces[0] + $announces[1];
+        } else {
+            $scored[$defense] += $announces[$defense];
+        }
 
         if (null !== $capotTeam) {
             $scored[$capotTeam] += self::CAPOT;
@@ -62,15 +79,6 @@ final class BeloteScorer
             $scored[$defense] += $cardPoints[$defense];
         }
 
-        // Points mis de côté par un litige : à l'équipe qui gagne cette donne-ci
-        $pendingAfter = 0;
-
-        if (Outcome::Litige === $outcome) {
-            $pendingAfter = $pending + $cardPoints[$takerTeam];
-        } elseif ($pending > 0) {
-            $scored[Outcome::Made === $outcome ? $takerTeam : $defense] += $pending;
-        }
-
-        return new DealResult($number, $dealer, $taker, $trump, $outcome, $cardPoints, $scored, $beloteTeam, $capotTeam, $pendingAfter);
+        return new DealResult($number, $dealer, $taker, $trump, $outcome, $cardPoints, $scored, $beloteTeam, $capotTeam, 0, announces: $announces);
     }
 }

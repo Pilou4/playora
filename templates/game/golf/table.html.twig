@@ -1,0 +1,109 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Partie de Golf | Playora{% endblock %}
+
+{% block metaTag %}
+    <meta name="description" content="Votre partie de Golf en cours sur Playora.">
+    <meta name="robots" content="noindex">
+{% endblock %}
+
+{% block importmap %}{{ importmap(['app', 'golf']) }}{% endblock %}
+
+{% block main_id %}partie{% endblock %}
+
+{# Pendant une partie, pas d'en-tête du site (ni menu, ni déconnexion) : la table prend tout l'écran #}
+{% block site_header %}{% endblock %}
+
+{% block body %}
+    {# Disposition A : les adversaires autour de la table avec leurs 6 cartes, la pioche et la défausse au centre,
+       vos 6 cartes en grand en bas. Le cadre, le tapis et les fenêtres sont ceux de la belote ; la barre du haut,
+       les boutons et la fin de trou, ceux du rami. #}
+    <main id="partie" class="game-table belote rami golf belote--{{ room.carpet.value }}"
+          data-view="{{ view|json_encode }}"
+          data-api-url="{{ path('api_golf_game', {id: game.id}) }}"
+          data-hub-url="{{ mercure(topic) }}"
+          data-csrf="{{ csrf_token('submit') }}"
+          data-cards-url="{{ asset(room.cardSet.path) }}"
+          data-back-url="{{ asset(room.cardBack.path) }}"
+          data-leave-url="{{ path('api_golf_leave', {id: game.id}) }}"
+          data-lobby-url="{{ path('app_game_lobby', {game: room.game.value}) }}">
+        <h1 class="visually-hidden">Partie de Golf en {{ room.targetPoints }} trous</h1>
+
+        <div class="belote__frame rami__frame">
+            <header class="belote__toolbar rami__toolbar">
+                <p class="belote__title">Golf <span class="belote__subtitle">· trou <b class="rami__round">{{ view.hole }}</b> / {{ room.targetPoints }}</span></p>
+
+                {# Temps du tour en cours #}
+                <div class="rami__clock" role="timer" aria-label="Temps du tour">
+                    <span class="rami__clock-fill"></span>
+                </div>
+
+                <p class="rami__score">Vous <b class="rami__score-value">0</b> pts</p>
+
+                <div class="belote__tools">
+{{ include('game/_sound_button.html.twig') }}
+                    <button class="belote__tool belote__tool--rules" type="button" title="Règles du jeu">
+                        <img src="{{ asset('images/icones/regles.svg') }}" width="18" height="18" alt=""><span class="visually-hidden">Règles du jeu</span>
+                    </button>
+                    <button class="belote__tool belote__tool--fullscreen" type="button" title="Plein écran">
+                        <img src="{{ asset('images/icones/plein-ecran.svg') }}" width="18" height="18" alt=""><span class="visually-hidden">Plein écran</span>
+                    </button>
+                    <button class="belote__quit" type="button">Quitter</button>
+                </div>
+            </header>
+
+            <div class="belote__felt rami__felt">
+                <section class="rami__opponents" aria-label="Les autres joueurs"></section>
+
+                <section class="golf__center" aria-label="Pioche et défausse">
+                    <button class="golf__pile golf__stock" type="button" aria-label="Piocher"></button>
+                    <button class="golf__pile golf__discard" type="button" aria-label="Prendre la carte de la défausse"></button>
+                    <div class="golf__drawn" aria-live="polite"></div>
+                </section>
+
+                <div class="rami__actions golf__actions">
+                    <p class="rami__hint" aria-live="polite"></p>
+                    <div class="rami__buttons">
+                        <button class="rami__button golf__throw" type="button" aria-pressed="false">Jeter la carte</button>
+                    </div>
+                </div>
+
+                {# Vos 6 cartes, en 2 lignes de 3 #}
+                <section class="golf__me" aria-label="Vos cartes">
+                    <ol class="golf__grid golf__grid--me"></ol>
+                    <p class="golf__tag golf__tag--me"></p>
+                </section>
+
+                <p class="belote__toast" role="status"></p>
+
+                {# Fin d'un trou, fin de la partie #}
+                <section class="rami__overlay" aria-live="polite">
+                    <div class="rami__panel">
+                        <h2 class="rami__panel-title"></h2>
+                        <ol class="rami__results"></ol>
+                        <a class="belote__end-link rami__panel-link" href="{{ path('app_game_lobby', {game: room.game.value}) }}">Retour aux salons</a>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <dialog class="belote__rules" aria-labelledby="regles-partie-titre">
+            <div class="belote__rules-head">
+                <h2 id="regles-partie-titre" class="belote__rules-title">Règles du Golf</h2>
+                <button class="belote__rules-close" type="button">Fermer</button>
+            </div>
+            {% include 'game/_rules_golf.html.twig' with {in_dialog: true} %}
+        </dialog>
+
+        {# Quitter la partie en cours : un robot prend la place #}
+        <dialog class="belote__leave rami__leave-dialog" aria-labelledby="quitter-titre" aria-describedby="quitter-texte">
+            <h2 id="quitter-titre" class="belote__leave-title">Quitter la partie ?</h2>
+            <p id="quitter-texte" class="belote__leave-text">Un robot prend votre place et la partie vous est comptée perdue. Vous ne pourrez pas revenir.</p>
+            <p class="belote__leave-error" role="alert"></p>
+            <div class="belote__leave-actions">
+                <button class="belote__leave-stay rami__leave-cancel" type="button">Rester</button>
+                <button class="belote__leave-confirm rami__leave-confirm" type="button">Quitter la partie</button>
+            </div>
+        </dialog>
+    </main>
+{% endblock %}
